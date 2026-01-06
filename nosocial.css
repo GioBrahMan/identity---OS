@@ -584,3 +584,19 @@ section{
 .identity-meta--tight{ margin-top:4px; }
 .identity-card-text--tight{ margin-top:6px; }
 .message.is-hidden{ display:none; }
+
+
+/* ===============================
+   Demo preview lock
+   =============================== */
+.demo-locked {
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.75;
+}
+
+.demo-locked input,
+.demo-locked textarea,
+.demo-locked button {
+  pointer-events: none !important;
+}

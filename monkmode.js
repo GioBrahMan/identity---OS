@@ -1,38 +1,50 @@
-// Home/monkmode.js (NoFap/NoSocial consistent + AM/PM + preserves newlines)
-import { supabase, requireActiveSubscription } from "./home.js";
+// Home/nofap.js (MonkMode-style reveal logic; AM/PM display)
+import { supabase } from "./home.js";
 
-console.log("monkmode.js loaded");
+console.log("nofap.js loaded");
+
+// ===============================
+// DEMO / PREVIEW MODE
+// ===============================
+let CAN_INTERACT = false;
+
+function enableDemoMode() {
+  const demoGate = document.getElementById("demoGate");
+  const appShell = document.getElementById("appShell");
+
+  demoGate?.classList.remove("is-hidden");
+  demoGate?.classList.add("is-on");
+  appShell?.classList.add("demo-locked");
+
+  CAN_INTERACT = false;
+}
 
 // ===============================
 // UI ELEMENTS
 // ===============================
-const monkInput = document.getElementById("monkInput");
+const identityInput = document.getElementById("identityInput");
 const streakDayText = document.getElementById("streakDayText");
-const savedScriptText = document.getElementById("savedScriptText");
+const savedIdentityText = document.getElementById("savedIdentityText");
 const lastCheckInText = document.getElementById("lastCheckInText");
 const messageEl = document.getElementById("message");
 
 const checkInBtn = document.getElementById("checkInBtn");
-const saveScriptBtn = document.getElementById("saveScriptBtn");
+const saveIdentityBtn = document.getElementById("saveIdentityBtn");
 const resetStreakBtn = document.getElementById("resetStreakBtn");
 
-const appShell = document.getElementById("appShell");
-const authGuard = document.getElementById("authGuard");
+const startingDayInput = document.getElementById("startingDayInput");
+const setStartingDayBtn = document.getElementById("setStartingDayBtn");
 
+const charCountEl = document.getElementById("charCount");
+
+const appShell = document.getElementById("appShell");
 const btnLogout = document.getElementById("btnLogout");
-btnLogout?.addEventListener("click", async () => {
-  try {
-    await supabase.auth.signOut();
-  } finally {
-    window.location.href = "LoginPage.html";
-  }
-});
 
 // ===============================
 // CONSTANTS / LIMITS
 // ===============================
-const TABLE = "monk_mode";
-const MAX_SCRIPT_LEN = 5000;
+const MAX_IDENTITY_LEN = 2000;
+const MAX_STARTING_DAY = 5000;
 const RATE_LIMIT_MS = 900;
 
 // ===============================
@@ -43,33 +55,21 @@ let isProcessing = false;
 let lastActionAt = 0;
 
 // ===============================
-// VISIBILITY (same pattern as NoFap)
+// VISIBILITY
 // ===============================
 function showEl(el) {
   if (!el) return;
   el.classList.remove("is-hidden");
 }
-function hideEl(el) {
-  if (!el) return;
-  el.classList.add("is-hidden");
-}
-function showAuthGuard() {
-  if (authGuard) {
-    authGuard.classList.remove("is-hidden");
-    authGuard.classList.add("is-on");
-  }
-  hideEl(appShell);
-}
-function showAppShell() {
-  if (authGuard) {
-    authGuard.classList.remove("is-on");
-    authGuard.classList.add("is-hidden");
-  }
-  showEl(appShell);
+
+function revealLoadedUI() {
+  savedIdentityText?.classList.remove("is-loading");
+  streakDayText?.classList.remove("is-loading");
+  lastCheckInText?.classList.remove("is-loading");
 }
 
 // ===============================
-// MESSAGE (same as NoFap)
+// MESSAGE
 // ===============================
 function showMessage(text, type = "success") {
   if (!messageEl) return;
@@ -78,8 +78,8 @@ function showMessage(text, type = "success") {
   messageEl.classList.remove("is-hidden", "success", "error");
   messageEl.classList.add(type === "error" ? "error" : "success");
 
-  window.clearTimeout(showMessage._t);
-  showMessage._t = window.setTimeout(() => {
+  clearTimeout(showMessage._t);
+  showMessage._t = setTimeout(() => {
     messageEl.classList.add("is-hidden");
   }, 5000);
 }
@@ -93,110 +93,66 @@ function clearMessage() {
 
 function setButtonsDisabled(disabled) {
   const ds = !!disabled;
-  if (checkInBtn) checkInBtn.disabled = ds;
-  if (saveScriptBtn) saveScriptBtn.disabled = ds;
-  if (resetStreakBtn) resetStreakBtn.disabled = ds;
-  if (monkInput) monkInput.disabled = ds;
-}
-
-// Prevent placeholder flash
-function revealLoadedUI() {
-  savedScriptText?.classList.remove("is-loading");
-  streakDayText?.classList.remove("is-loading");
-  lastCheckInText?.classList.remove("is-loading");
+  checkInBtn && (checkInBtn.disabled = ds);
+  saveIdentityBtn && (saveIdentityBtn.disabled = ds);
+  resetStreakBtn && (resetStreakBtn.disabled = ds);
+  setStartingDayBtn && (setStartingDayBtn.disabled = ds);
+  identityInput && (identityInput.disabled = ds);
+  startingDayInput && (startingDayInput.disabled = ds);
 }
 
 // ===============================
-// VALIDATION / NORMALIZATION (preserves newlines)
+// HELPERS
 // ===============================
 function normalize(s) {
-  return String(s ?? "")
-    .replace(/\r\n/g, "\n")
-    .normalize("NFKC")
-    .trimEnd();
+  return String(s ?? "").replace(/\r\n/g, "\n").normalize("NFKC").trimEnd();
 }
 
-function sanitizeForStorage(s, maxLen) {
+function sanitizeForStorage(s) {
   let out = normalize(s);
-
-  // ✅ IMPORTANT: allow \n (0x0A) and \r (0x0D), same as your NoFap/NoSocial approach
-  out = out.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "");
-  out = out.replace(/[\u200B-\u200F\uFEFF]/g, "");
-
-  if (out.length > maxLen) out = out.slice(0, maxLen);
+  out = out.replace(/[\u0000-\u001F]/g, "");
+  if (out.length > MAX_IDENTITY_LEN) out = out.slice(0, MAX_IDENTITY_LEN);
   return out;
 }
 
 function isUUID(v) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v ?? "");
+  return /^[0-9a-f-]{36}$/i.test(v ?? "");
 }
 
-// ===============================
-// DATE/TIME (client-side + AM/PM)
-// ===============================
 function getTodayKey() {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+  const d = new Date();
+  return d.toISOString().slice(0, 10);
 }
 
 function getTimeString() {
-  const d = new Date();
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mm = String(d.getMinutes()).padStart(2, "0");
-  const ss = String(d.getSeconds()).padStart(2, "0");
-  return `${hh}:${mm}:${ss}`;
+  return new Date().toTimeString().slice(0, 8);
 }
 
-function getPrettyDate(dateKey) {
-  if (!dateKey) return "—";
-  const [y, m, d] = String(dateKey).split("-").map(Number);
-  const date = new Date(y, (m || 1) - 1, d || 1);
-  return date.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
-}
-
-function formatTimeAmPm(timeStr) {
-  // accepts "HH:MM" or "HH:MM:SS"
-  if (!timeStr) return "—";
-  const parts = String(timeStr).split(":");
-  const hh = parseInt(parts[0], 10);
-  const mm = parts[1] ?? "00";
-  const ss = parts[2];
-
-  if (Number.isNaN(hh)) return String(timeStr);
-
-  const ampm = hh >= 12 ? "PM" : "AM";
-  const hour12 = ((hh + 11) % 12) + 1;
-
-  return ss ? `${hour12}:${mm}:${ss} ${ampm}` : `${hour12}:${mm} ${ampm}`;
+function formatTimeAmPm(t) {
+  if (!t) return "—";
+  const [h, m, s] = t.split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hh = ((h + 11) % 12) + 1;
+  return s ? `${hh}:${m.toString().padStart(2, "0")}:${s} ${ampm}` : `${hh}:${m} ${ampm}`;
 }
 
 // ===============================
-// SINGLE-FLIGHT + SOFT RATE LIMIT
+// GUARD
 // ===============================
-async function guarded(actionName, fn) {
+async function guarded(name, fn) {
+  if (!CAN_INTERACT) return;
+
   const now = Date.now();
-  if (now - lastActionAt < RATE_LIMIT_MS) {
-    showMessage("Slow down — one action at a time.", "error");
-    return;
-  }
+  if (now - lastActionAt < RATE_LIMIT_MS) return;
   lastActionAt = now;
 
-  if (isProcessing) {
-    showMessage("Please wait — finishing the previous action.", "error");
-    return;
-  }
-
+  if (isProcessing) return;
   isProcessing = true;
-  clearMessage();
   setButtonsDisabled(true);
 
   try {
     await fn();
-  } catch (err) {
-    console.warn(`${actionName} failed.`, err);
+  } catch (e) {
     showMessage("Operation failed. Please try again.", "error");
   } finally {
     isProcessing = false;
@@ -205,198 +161,70 @@ async function guarded(actionName, fn) {
 }
 
 // ===============================
-// AUTH (read session user_id)
-// ===============================
-async function getValidSessionUserId() {
-  const { data, error } = await supabase.auth.getUser();
-  if (error) return null;
-
-  const userId = data?.user?.id;
-  if (!userId || !isUUID(userId)) return null;
-  return userId;
-}
-
-// ===============================
 // DATA LOAD
 // ===============================
 async function loadState() {
-  const { data, error } = await supabase
-    .from(TABLE)
-    .select("protocol_rules,current_streak,last_checkin_date,last_checkin_time")
+  const { data } = await supabase
+    .from("nofap_streaks")
+    .select("*")
     .eq("user_id", currentUserId)
     .maybeSingle();
 
-  if (error && error.code !== "PGRST116") {
-    console.warn("loadState error:", error);
-    showMessage("Failed to load your Monk Mode streak.", "error");
+  if (!data) {
     revealLoadedUI();
-    return null;
+    return;
   }
 
-  if (data) {
-    const scriptRaw = String(data.protocol_rules ?? "");
-    const script = scriptRaw.trim()
-      ? scriptRaw
-      : "No Monk Mode script saved yet. Your first check-in will lock it in.";
-    if (savedScriptText) savedScriptText.textContent = script;
+  savedIdentityText.textContent = data.identity_statement || "No identity saved yet.";
+  streakDayText.textContent = `Day ${(data.starting_day || 0) + (data.current_streak || 0)}`;
 
-    const cur = Number(data.current_streak || 0);
-    if (streakDayText) streakDayText.textContent = `Day ${cur}`;
-
-    if (lastCheckInText) {
-      if (data.last_checkin_date) {
-        const pretty = getPrettyDate(data.last_checkin_date);
-        const timePretty = data.last_checkin_time ? formatTimeAmPm(data.last_checkin_time) : "--:--";
-        lastCheckInText.textContent = `Last Check-In: ${pretty} · ${timePretty}`;
-      } else {
-        lastCheckInText.textContent = "Last Check-In: —";
-      }
-    }
-  } else {
-    if (savedScriptText)
-      savedScriptText.textContent = "No Monk Mode script saved yet. Your first check-in will lock it in.";
-    if (streakDayText) streakDayText.textContent = "Day 0";
-    if (lastCheckInText) lastCheckInText.textContent = "Last Check-In: —";
+  if (data.last_checkin_date) {
+    lastCheckInText.textContent = `Last Check-In: ${data.last_checkin_date} · ${formatTimeAmPm(data.last_checkin_time)}`;
   }
 
   revealLoadedUI();
-  if (monkInput) monkInput.value = "";
-  return data || null;
 }
 
 // ===============================
-// ACTIONS
+// ACTIONS (GUARDED)
 // ===============================
-saveScriptBtn?.addEventListener("click", () =>
-  guarded("saveScript", async () => {
-    if (!currentUserId) throw new Error("AUTH_REQUIRED");
-
-    const script = sanitizeForStorage(monkInput?.value ?? "", MAX_SCRIPT_LEN);
-    if (!script.trim()) {
-      showMessage("Type your Monk Mode script before saving.", "error");
-      return;
-    }
-
-    const { data: current, error: readErr } = await supabase
-      .from(TABLE)
-      .select("user_id")
-      .eq("user_id", currentUserId)
-      .maybeSingle();
-
-    if (readErr && readErr.code !== "PGRST116") throw readErr;
-
-    if (!current) {
-      const { error } = await supabase.from(TABLE).insert({
-        user_id: currentUserId,
-        protocol_rules: script,
-        current_streak: 0,
-        last_checkin_date: null,
-        last_checkin_time: null,
-        is_active: true,
-      });
-      if (error) throw error;
-
-      await loadState();
-      showMessage('Script saved. Now retype it exactly and press "Check In" to start Day 1.', "success");
-      return;
-    }
-
-    const { error } = await supabase.from(TABLE).update({ protocol_rules: script }).eq("user_id", currentUserId);
-    if (error) throw error;
-
-    await loadState();
-    showMessage("Script updated. Your streak stays the same — next check-in must match this script.", "success");
-  })
-);
-
 checkInBtn?.addEventListener("click", () =>
   guarded("checkIn", async () => {
-    if (!currentUserId) throw new Error("AUTH_REQUIRED");
+    const input = sanitizeForStorage(identityInput.value);
+    if (!input) return;
 
-    const input = sanitizeForStorage(monkInput?.value ?? "", MAX_SCRIPT_LEN);
-    if (!input.trim()) {
-      showMessage("Type your full Monk Mode script before checking in.", "error");
-      return;
-    }
+    const today = getTodayKey();
+    const now = getTimeString();
 
-    const todayKey = getTodayKey();
-    const nowTime = getTimeString();
-
-    const { data: current, error: readErr } = await supabase
-      .from(TABLE)
-      .select("protocol_rules,current_streak,last_checkin_date")
+    const { data } = await supabase
+      .from("nofap_streaks")
+      .select("*")
       .eq("user_id", currentUserId)
       .maybeSingle();
 
-    if (readErr && readErr.code !== "PGRST116") throw readErr;
-
-    if (!current) {
-      const { error } = await supabase.from(TABLE).insert({
+    if (!data) {
+      await supabase.from("nofap_streaks").insert({
         user_id: currentUserId,
-        protocol_rules: input,
+        identity_statement: input,
         current_streak: 1,
-        last_checkin_date: todayKey,
-        last_checkin_time: nowTime,
-        is_active: true,
+        starting_day: 0,
+        last_checkin_date: today,
+        last_checkin_time: now,
       });
-      if (error) throw error;
+    } else {
+      if (data.last_checkin_date === today) return;
 
-      await loadState();
-      showMessage("Monk Mode script locked in. Day 1 has started.", "success");
-      return;
-    }
-
-    // Already checked in today -> only update time
-    if (current.last_checkin_date === todayKey) {
-      const { error } = await supabase.from(TABLE).update({ last_checkin_time: nowTime }).eq("user_id", currentUserId);
-      if (error) throw error;
-
-      await loadState();
-      showMessage("You already checked in today. Streak stays the same, time updated.", "success");
-      return;
-    }
-
-    // Must match script exactly
-    if (normalize(input) !== normalize(current.protocol_rules)) {
-      showMessage('This doesn’t match your saved Monk Mode script exactly. Use "Save / Update Script" if you changed it.', "error");
-      return;
-    }
-
-    const nextStreak = Number(current.current_streak || 0) + 1;
-
-    const { error } = await supabase
-      .from(TABLE)
-      .update({ current_streak: nextStreak, last_checkin_date: todayKey, last_checkin_time: nowTime })
-      .eq("user_id", currentUserId);
-
-    if (error) throw error;
-
-    await loadState();
-    showMessage(`Check-in logged. You are now on Monk Mode Day ${nextStreak}.`, "success");
-  })
-);
-
-resetStreakBtn?.addEventListener("click", () =>
-  guarded("resetStreak", async () => {
-    if (!currentUserId) throw new Error("AUTH_REQUIRED");
-
-    const ok = confirm("Reset your Monk Mode streak back to Day 0? This keeps your script saved.");
-    if (!ok) return;
-
-    const { error, count } = await supabase
-      .from(TABLE)
-      .update({ current_streak: 0, last_checkin_date: null, last_checkin_time: null }, { count: "exact" })
-      .eq("user_id", currentUserId);
-
-    if (error) throw error;
-
-    if (!count) {
-      showMessage("No streak found to reset yet. Save your script or check in first.", "error");
-      return;
+      await supabase
+        .from("nofap_streaks")
+        .update({
+          current_streak: data.current_streak + 1,
+          last_checkin_date: today,
+          last_checkin_time: now,
+        })
+        .eq("user_id", currentUserId);
     }
 
     await loadState();
-    showMessage("Monk Mode streak reset to Day 0. Script still saved. Rebuild from zero.", "success");
   })
 );
 
@@ -407,39 +235,35 @@ async function init() {
   setButtonsDisabled(true);
   clearMessage();
 
-  supabase.auth.onAuthStateChange((_event, session) => {
-    if (!session?.user?.id) {
-      currentUserId = null;
-      window.location.href = "LoginPage.html";
-    }
-  });
+  const { data } = await supabase.auth.getSession();
+  const user = data?.session?.user;
 
-  try {
-    const user = await requireActiveSubscription({ returnTo: "MonkMode.html" });
-    if (!user?.id) return;
-
-    const userId = await getValidSessionUserId();
-    if (!userId) {
-      window.location.href = "LoginPage.html";
-      return;
-    }
-
-    currentUserId = userId;
-
-    await loadState();
-    setButtonsDisabled(false);
-    showAppShell();
-  } catch (e) {
-    console.warn("MonkMode init failed:", e);
-    showAuthGuard();
-    window.location.href = "LoginPage.html";
+  if (!user) {
+    enableDemoMode();
+    revealLoadedUI();
+    showEl(appShell);
+    return;
   }
+
+  const { data: sub } = await supabase
+    .from("user_subscriptions")
+    .select("is_active")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!sub?.is_active) {
+    enableDemoMode();
+    revealLoadedUI();
+    showEl(appShell);
+    return;
+  }
+
+  CAN_INTERACT = true;
+  currentUserId = user.id;
+
+  await loadState();
+  setButtonsDisabled(false);
+  showEl(appShell);
 }
 
 init();
-
-// Auto-resize on focus (kept)
-monkInput?.addEventListener("focus", () => {
-  monkInput.style.height = "auto";
-  monkInput.style.height = monkInput.scrollHeight + "px";
-});

@@ -1,7 +1,23 @@
-// Home/nosocial.js (consistent + AM/PM display)
-import { supabase, requireActiveSubscription } from "./home.js";
+// Home/nosocial.js (Demo / Preview safe, consistent with NoFap + MonkMode)
+import { supabase } from "./home.js";
 
 console.log("nosocial.js loaded");
+
+// ===============================
+// DEMO / PREVIEW MODE
+// ===============================
+let CAN_INTERACT = false;
+
+function enableDemoMode() {
+  const demoGate = document.getElementById("demoGate");
+  const appShell = document.getElementById("appShell");
+
+  demoGate?.classList.remove("is-hidden");
+  demoGate?.classList.add("is-on");
+  appShell?.classList.add("demo-locked");
+
+  CAN_INTERACT = false;
+}
 
 // ===============================
 // UI ELEMENTS
@@ -19,14 +35,8 @@ const checkInBtn = document.getElementById("checkInBtn");
 const saveIdentityBtn = document.getElementById("saveIdentityBtn");
 const slipBtn = document.getElementById("slipBtn");
 
+const appShell = document.getElementById("appShell");
 const btnLogout = document.getElementById("btnLogout");
-btnLogout?.addEventListener("click", async () => {
-  try {
-    await supabase.auth.signOut();
-  } finally {
-    window.location.href = "LoginPage.html";
-  }
-});
 
 // ===============================
 // CONSTANTS / LIMITS
@@ -44,7 +54,17 @@ let isProcessing = false;
 let lastActionAt = 0;
 
 // ===============================
-// MESSAGE (same style as NoFap)
+// VISIBILITY
+// ===============================
+function revealLoadedUI() {
+  savedIdentityText?.classList.remove("is-loading");
+  savedSitesText?.classList.remove("is-loading");
+  streakDayText?.classList.remove("is-loading");
+  lastCheckInText?.classList.remove("is-loading");
+}
+
+// ===============================
+// MESSAGE
 // ===============================
 function showMessage(text, type = "success") {
   if (!messageEl) return;
@@ -53,8 +73,8 @@ function showMessage(text, type = "success") {
   messageEl.classList.remove("is-hidden", "success", "error");
   messageEl.classList.add(type === "error" ? "error" : "success");
 
-  window.clearTimeout(showMessage._t);
-  showMessage._t = window.setTimeout(() => {
+  clearTimeout(showMessage._t);
+  showMessage._t = setTimeout(() => {
     messageEl.classList.add("is-hidden");
   }, 5000);
 }
@@ -68,21 +88,18 @@ function clearMessage() {
 
 function setButtonsDisabled(disabled) {
   const ds = !!disabled;
-  if (checkInBtn) checkInBtn.disabled = ds;
-  if (saveIdentityBtn) saveIdentityBtn.disabled = ds;
-  if (slipBtn) slipBtn.disabled = ds;
-  if (sitesInput) sitesInput.disabled = ds;
-  if (identityInput) identityInput.disabled = ds;
+  checkInBtn && (checkInBtn.disabled = ds);
+  saveIdentityBtn && (saveIdentityBtn.disabled = ds);
+  slipBtn && (slipBtn.disabled = ds);
+  sitesInput && (sitesInput.disabled = ds);
+  identityInput && (identityInput.disabled = ds);
 }
 
 // ===============================
-// VALIDATION / NORMALIZATION
+// HELPERS
 // ===============================
 function normalize(s) {
-  return String(s ?? "")
-    .replace(/\r\n/g, "\n")
-    .normalize("NFKC")
-    .trimEnd();
+  return String(s ?? "").replace(/\r\n/g, "\n").normalize("NFKC").trimEnd();
 }
 
 function sanitizeForStorage(s, maxLen = MAX_IDENTITY_LEN) {
@@ -97,7 +114,6 @@ function isUUID(v) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v ?? "");
 }
 
-// TEXTAREA <-> TEXT[] (allowed_creators)
 function creatorsTextToArray(text) {
   return String(text || "")
     .split("\n")
@@ -110,76 +126,41 @@ function creatorsArrayToText(arr) {
   return Array.isArray(arr) ? arr.join("\n") : "";
 }
 
-// ===============================
-// DATE/TIME (client-side + AM/PM)
-// ===============================
 function getTodayKey() {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+  const d = new Date();
+  return d.toISOString().slice(0, 10);
 }
 
 function getTimeString() {
-  const d = new Date();
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mm = String(d.getMinutes()).padStart(2, "0");
-  const ss = String(d.getSeconds()).padStart(2, "0");
-  return `${hh}:${mm}:${ss}`;
+  return new Date().toTimeString().slice(0, 8);
 }
 
-function getPrettyDate(dateKey) {
-  if (!dateKey) return "—";
-  const [y, m, d] = String(dateKey).split("-").map(Number);
-  const date = new Date(y, m - 1, d);
-  return date.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
-}
-
-function formatTimeAmPm(timeStr) {
-  if (!timeStr) return "—";
-  const parts = String(timeStr).split(":");
-  const hh = parseInt(parts[0], 10);
-  const mm = parts[1] ?? "00";
-  const ss = parts[2];
-  if (Number.isNaN(hh)) return String(timeStr);
-
-  const ampm = hh >= 12 ? "PM" : "AM";
-  const hour12 = ((hh + 11) % 12) + 1;
-  return ss ? `${hour12}:${mm}:${ss} ${ampm}` : `${hour12}:${mm} ${ampm}`;
+function formatTimeAmPm(t) {
+  if (!t) return "—";
+  const [h, m, s] = t.split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hh = ((h + 11) % 12) + 1;
+  return s ? `${hh}:${m.toString().padStart(2, "0")}:${s} ${ampm}` : `${hh}:${m} ${ampm}`;
 }
 
 // ===============================
-// SINGLE-FLIGHT + SOFT RATE LIMIT
+// GUARD
 // ===============================
-async function guarded(actionName, fn) {
+async function guarded(name, fn) {
+  if (!CAN_INTERACT) return;
+
   const now = Date.now();
-  if (now - lastActionAt < RATE_LIMIT_MS) {
-    showMessage("Slow down — one action at a time.", "error");
-    return;
-  }
+  if (now - lastActionAt < RATE_LIMIT_MS) return;
   lastActionAt = now;
 
-  if (isProcessing) {
-    showMessage("Please wait — finishing the previous action.", "error");
-    return;
-  }
-
+  if (isProcessing) return;
   isProcessing = true;
-  clearMessage();
   setButtonsDisabled(true);
 
   try {
     await fn();
-  } catch (err) {
-    const raw = String(err?.message || "").toLowerCase();
-
-    if (raw.includes("auth_required")) showMessage("Session expired. Please log in again.", "error");
-    else if (raw.includes("identity_mismatch"))
-      showMessage('This doesn’t match your saved identity statement exactly. Use "Save / Update Identity" if you changed it.', "error");
-    else showMessage("Operation failed. Please try again.", "error");
-
-    console.warn(`${actionName} failed.`, err);
+  } catch {
+    showMessage("Operation failed. Please try again.", "error");
   } finally {
     isProcessing = false;
     setButtonsDisabled(false);
@@ -187,220 +168,112 @@ async function guarded(actionName, fn) {
 }
 
 // ===============================
-// AUTH (read session user_id)
-// ===============================
-async function getValidSessionUserId() {
-  const { data, error } = await supabase.auth.getUser();
-  if (error) return null;
-
-  const userId = data?.user?.id;
-  if (!userId || !isUUID(userId)) return null;
-  return userId;
-}
-
-// ===============================
 // DATA LOAD
 // ===============================
-
 async function loadState() {
-  // show loading while fetching
-  savedIdentityText?.classList.add("is-loading");
-  savedSitesText?.classList.add("is-loading");
+  const { data } = await supabase
+    .from(TABLE)
+    .select("allowed_creators,identity_statement,current_streak,last_checkin_date,last_checkin_time")
+    .eq("user_id", currentUserId)
+    .maybeSingle();
 
-  try {
-    const { data, error } = await supabase
-      .from(TABLE)
-      .select("allowed_creators,identity_statement,current_streak,last_checkin_date,last_checkin_time")
-      .eq("user_id", currentUserId)
-      .maybeSingle();
-
-    if (error && error.code !== "PGRST116") {
-      showMessage("Failed to load your social media streak.", "error");
-      return null;
-    }
-
-    if (data) {
-      const identityRaw = String(data.identity_statement ?? "");
-      const identity = identityRaw.trim()
-        ? identityRaw
-        : "No identity saved yet. Your first check-in will lock it in.";
-      if (savedIdentityText) savedIdentityText.textContent = identity;
-
-      const creatorsText = creatorsArrayToText(data.allowed_creators);
-      const creators = creatorsText.trim()
-        ? creatorsText
-        : "No content creators listed yet. Start by naming the creators you enjoy watching or add value to your life.";
-      if (savedSitesText) savedSitesText.textContent = creators;
-
-      const cur = Number(data.current_streak || 0);
-      if (streakDayText) streakDayText.textContent = `Day ${cur}`;
-
-      if (lastCheckInText) {
-        if (data.last_checkin_date) {
-          const pretty = getPrettyDate(data.last_checkin_date);
-          const timePretty = data.last_checkin_time ? formatTimeAmPm(data.last_checkin_time) : "--:--";
-          lastCheckInText.textContent = `Last Check-In: ${pretty} · ${timePretty}`;
-        } else {
-          lastCheckInText.textContent = "Last Check-In: —";
-        }
-      }
-    } else {
-      if (savedIdentityText)
-        savedIdentityText.textContent = "No identity saved yet. Your first check-in will lock it in.";
-      if (savedSitesText)
-        savedSitesText.textContent =
-          "No content creators listed yet. Start by naming the creators you enjoy watching or add value to your life.";
-      if (streakDayText) streakDayText.textContent = "Day 0";
-      if (lastCheckInText) lastCheckInText.textContent = "Last Check-In: —";
-    }
-
-    if (sitesInput) sitesInput.value = "";
-    if (identityInput) identityInput.value = "";
-
-    return data || null;
-  } finally {
-    // ALWAYS unhide, even if Supabase errors
-    savedIdentityText?.classList.remove("is-loading");
-    savedSitesText?.classList.remove("is-loading");
+  if (!data) {
+    revealLoadedUI();
+    return;
   }
-}
 
+  savedIdentityText.textContent =
+    data.identity_statement || "No identity saved yet. Your first check-in will lock it in.";
+
+  savedSitesText.textContent =
+    creatorsArrayToText(data.allowed_creators) ||
+    "No content creators listed yet. Start by naming the creators you enjoy watching or add value to your life.";
+
+  streakDayText.textContent = `Day ${data.current_streak || 0}`;
+
+  if (data.last_checkin_date) {
+    lastCheckInText.textContent = `Last Check-In: ${data.last_checkin_date} · ${formatTimeAmPm(
+      data.last_checkin_time
+    )}`;
+  } else {
+    lastCheckInText.textContent = "Last Check-In: —";
+  }
+
+  revealLoadedUI();
+}
 
 // ===============================
 // ACTIONS
 // ===============================
-saveIdentityBtn?.addEventListener("click", () =>
-  guarded("saveIdentity", async () => {
-    if (!currentUserId) throw new Error("AUTH_REQUIRED");
+checkInBtn?.addEventListener("click", () =>
+  guarded("checkIn", async () => {
+    const input = sanitizeForStorage(identityInput.value);
+    if (!input) return;
 
-    const identityRaw = sanitizeForStorage(identityInput?.value ?? "", MAX_IDENTITY_LEN);
-    if (!identityRaw.trim()) {
-      showMessage("Type an identity statement before saving.", "error");
-      return;
-    }
+    const today = getTodayKey();
+    const now = getTimeString();
 
-    const allowedCreators = creatorsTextToArray(sitesInput?.value ?? "");
-
-    const { data: current, error: readErr } = await supabase
+    const { data } = await supabase
       .from(TABLE)
-      .select("user_id")
+      .select("*")
       .eq("user_id", currentUserId)
       .maybeSingle();
 
-    if (readErr && readErr.code !== "PGRST116") throw readErr;
-
-    if (!current) {
-      const { error } = await supabase.from(TABLE).insert({
+    if (!data) {
+      await supabase.from(TABLE).insert({
         user_id: currentUserId,
-        allowed_creators: allowedCreators,
-        identity_statement: identityRaw,
-        current_streak: 0,
-        last_checkin_date: null,
-        last_checkin_time: null,
+        allowed_creators: creatorsTextToArray(sitesInput.value),
+        identity_statement: input,
+        current_streak: 1,
+        last_checkin_date: today,
+        last_checkin_time: now,
       });
-      if (error) throw error;
+    } else {
+      if (data.last_checkin_date === today) return;
 
-      await loadState();
-      showMessage('Identity + creators saved. Now retype it and press "Check In" to start Day 1.', "success");
-      return;
+      await supabase
+        .from(TABLE)
+        .update({
+          current_streak: data.current_streak + 1,
+          last_checkin_date: today,
+          last_checkin_time: now,
+        })
+        .eq("user_id", currentUserId);
     }
 
-    const { error } = await supabase
-      .from(TABLE)
-      .update({ allowed_creators: allowedCreators, identity_statement: identityRaw })
-      .eq("user_id", currentUserId);
-
-    if (error) throw error;
-
     await loadState();
-    showMessage("Identity updated. Your streak stays the same — next check-in will require this identity.", "success");
   })
 );
 
-checkInBtn?.addEventListener("click", () =>
-  guarded("checkIn", async () => {
-    if (!currentUserId) throw new Error("AUTH_REQUIRED");
+saveIdentityBtn?.addEventListener("click", () =>
+  guarded("saveIdentity", async () => {
+    const identity = sanitizeForStorage(identityInput.value);
+    if (!identity) return;
 
-    const input = sanitizeForStorage(identityInput?.value ?? "", MAX_IDENTITY_LEN);
-    if (!input.trim()) {
-      showMessage("Type your Healthy Social Media identity statement before checking in.", "error");
-      return;
-    }
-
-    const todayKey = getTodayKey();
-    const nowTime = getTimeString();
-
-    const { data: current, error: readErr } = await supabase
-      .from(TABLE)
-      .select("identity_statement,current_streak,last_checkin_date")
-      .eq("user_id", currentUserId)
-      .maybeSingle();
-
-    if (readErr && readErr.code !== "PGRST116") throw readErr;
-
-    if (!current) {
-      const allowedCreators = creatorsTextToArray(sitesInput?.value ?? "");
-      const { error } = await supabase.from(TABLE).insert({
-        user_id: currentUserId,
-        allowed_creators: allowedCreators,
-        identity_statement: input,
-        current_streak: 1,
-        last_checkin_date: todayKey,
-        last_checkin_time: nowTime,
-      });
-      if (error) throw error;
-
-      await loadState();
-      showMessage("Identity locked in. Day 1 of your Healthy Social Media streak has started.", "success");
-      return;
-    }
-
-    if (current.last_checkin_date === todayKey) {
-      const { error } = await supabase.from(TABLE).update({ last_checkin_time: nowTime }).eq("user_id", currentUserId);
-      if (error) throw error;
-
-      await loadState();
-      showMessage("You already checked in today. Streak stays the same, time updated.", "success");
-      return;
-    }
-
-    if (normalize(input) !== normalize(current.identity_statement)) throw new Error("IDENTITY_MISMATCH");
-
-    const nextStreak = Number(current.current_streak || 0) + 1;
-
-    const { error } = await supabase
-      .from(TABLE)
-      .update({ current_streak: nextStreak, last_checkin_date: todayKey, last_checkin_time: nowTime })
-      .eq("user_id", currentUserId);
-
-    if (error) throw error;
+    await supabase.from(TABLE).upsert({
+      user_id: currentUserId,
+      allowed_creators: creatorsTextToArray(sitesInput.value),
+      identity_statement: identity,
+    });
 
     await loadState();
-    showMessage(`Check-in logged. You are now on Day ${nextStreak}.`, "success");
   })
 );
 
 slipBtn?.addEventListener("click", () =>
   guarded("slip", async () => {
-    if (!currentUserId) throw new Error("AUTH_REQUIRED");
+    if (!confirm("Reset your Healthy Social Media streak back to Day 0?")) return;
 
-    const ok = confirm("Mark today as a slip and reset your Healthy Social Media streak back to Day 0?");
-    if (!ok) return;
-
-    const { error, count } = await supabase
+    await supabase
       .from(TABLE)
-      .update({ current_streak: 0, last_checkin_date: null, last_checkin_time: null }, { count: "exact" })
+      .update({
+        current_streak: 0,
+        last_checkin_date: null,
+        last_checkin_time: null,
+      })
       .eq("user_id", currentUserId);
 
-    if (error) throw error;
-
-    if (!count) {
-      showMessage("No streak found to reset yet. Save an identity or check in first.", "error");
-      return;
-    }
-
     await loadState();
-    showMessage("You marked a slip. Streak reset to Day 0. We rebuild from zero.", "success");
   })
 );
 
@@ -408,22 +281,49 @@ slipBtn?.addEventListener("click", () =>
 // INIT
 // ===============================
 async function init() {
-  const user = await requireActiveSubscription({ returnTo: "NoSocialMedia.html" });
-  if (!user?.id) return;
+  setButtonsDisabled(true);
+  clearMessage();
 
-  const userId = await getValidSessionUserId();
-  if (!userId) {
-    showMessage("Session expired. Please log in again.", "error");
+  const { data } = await supabase.auth.getSession();
+  const user = data?.session?.user;
+
+  if (!user) {
+    enableDemoMode();
+    revealLoadedUI();
+    appShell?.classList.remove("is-hidden");
     return;
   }
 
-  currentUserId = userId;
+  const { data: sub } = await supabase
+    .from("user_subscriptions")
+    .select("is_active")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
-  supabase.auth.onAuthStateChange((_event, session) => {
-    if (!session?.user?.id) currentUserId = null;
-  });
+  if (!sub?.is_active) {
+    enableDemoMode();
+    revealLoadedUI();
+    appShell?.classList.remove("is-hidden");
+    return;
+  }
+
+  CAN_INTERACT = true;
+  currentUserId = user.id;
 
   await loadState();
+  setButtonsDisabled(false);
+  appShell?.classList.remove("is-hidden");
 }
 
 init();
+
+// ===============================
+// LOGOUT
+// ===============================
+btnLogout?.addEventListener("click", async () => {
+  try {
+    await supabase.auth.signOut();
+  } finally {
+    window.location.href = "LoginPage.html";
+  }
+});

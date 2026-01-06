@@ -1,7 +1,23 @@
 // Home/nofap.js (MonkMode-style reveal logic; AM/PM display)
-import { supabase, requireActiveSubscription } from "./home.js";
+import { supabase } from "./home.js";
 
 console.log("nofap.js loaded");
+
+// ===============================
+// DEMO / PREVIEW MODE
+// ===============================
+let CAN_INTERACT = false;
+
+function enableDemoMode() {
+  const demoGate = document.getElementById("demoGate");
+  const appShell = document.getElementById("appShell");
+
+  demoGate?.classList.remove("is-hidden");
+  demoGate?.classList.add("is-on");
+  appShell?.classList.add("demo-locked");
+
+  CAN_INTERACT = false;
+}
 
 // ===============================
 // UI ELEMENTS
@@ -22,15 +38,7 @@ const setStartingDayBtn = document.getElementById("setStartingDayBtn");
 const charCountEl = document.getElementById("charCount");
 
 const appShell = document.getElementById("appShell");
-const authGuard = document.getElementById("authGuard");
-
 const btnLogout = document.getElementById("btnLogout");
-
-// Year
-const yearNowEl = document.getElementById("yearNow");
-try {
-  if (yearNowEl) yearNowEl.textContent = String(new Date().getFullYear());
-} catch {}
 
 // ===============================
 // CONSTANTS / LIMITS
@@ -53,28 +61,7 @@ function showEl(el) {
   if (!el) return;
   el.classList.remove("is-hidden");
 }
-function hideEl(el) {
-  if (!el) return;
-  el.classList.add("is-hidden");
-}
 
-function showAuthGuard() {
-  if (authGuard) {
-    authGuard.classList.remove("is-hidden");
-    authGuard.classList.add("is-on");
-  }
-  hideEl(appShell);
-}
-
-function showAppShell() {
-  if (authGuard) {
-    authGuard.classList.remove("is-on");
-    authGuard.classList.add("is-hidden");
-  }
-  showEl(appShell);
-}
-
-// ✅ MonkMode-style: reveal UI by removing is-loading
 function revealLoadedUI() {
   savedIdentityText?.classList.remove("is-loading");
   streakDayText?.classList.remove("is-loading");
@@ -91,8 +78,8 @@ function showMessage(text, type = "success") {
   messageEl.classList.remove("is-hidden", "success", "error");
   messageEl.classList.add(type === "error" ? "error" : "success");
 
-  window.clearTimeout(showMessage._t);
-  showMessage._t = window.setTimeout(() => {
+  clearTimeout(showMessage._t);
+  showMessage._t = setTimeout(() => {
     messageEl.classList.add("is-hidden");
   }, 5000);
 }
@@ -106,112 +93,67 @@ function clearMessage() {
 
 function setButtonsDisabled(disabled) {
   const ds = !!disabled;
-  if (checkInBtn) checkInBtn.disabled = ds;
-  if (saveIdentityBtn) saveIdentityBtn.disabled = ds;
-  if (resetStreakBtn) resetStreakBtn.disabled = ds;
-  if (setStartingDayBtn) setStartingDayBtn.disabled = ds;
-  if (identityInput) identityInput.disabled = ds;
-  if (startingDayInput) startingDayInput.disabled = ds;
-}
-
-function updateCharCount() {
-  if (!charCountEl || !identityInput) return;
-  charCountEl.textContent = `${identityInput.value.length}/${MAX_IDENTITY_LEN}`;
+  checkInBtn && (checkInBtn.disabled = ds);
+  saveIdentityBtn && (saveIdentityBtn.disabled = ds);
+  resetStreakBtn && (resetStreakBtn.disabled = ds);
+  setStartingDayBtn && (setStartingDayBtn.disabled = ds);
+  identityInput && (identityInput.disabled = ds);
+  startingDayInput && (startingDayInput.disabled = ds);
 }
 
 // ===============================
-// VALIDATION / NORMALIZATION
+// HELPERS
 // ===============================
 function normalize(s) {
-  return String(s ?? "")
-    .replace(/\r\n/g, "\n")
-    .normalize("NFKC")
-    .trimEnd();
+  return String(s ?? "").replace(/\r\n/g, "\n").normalize("NFKC").trimEnd();
 }
 
 function sanitizeForStorage(s) {
   let out = normalize(s);
-  out = out.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "");
-  out = out.replace(/[\u200B-\u200F\uFEFF]/g, "");
+  out = out.replace(/[\u0000-\u001F]/g, "");
   if (out.length > MAX_IDENTITY_LEN) out = out.slice(0, MAX_IDENTITY_LEN);
   return out;
 }
 
 function isUUID(v) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v ?? "");
+  return /^[0-9a-f-]{36}$/i.test(v ?? "");
 }
 
-// ===============================
-// DATE/TIME (client-side + AM/PM helper)
-// ===============================
 function getTodayKey() {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+  const d = new Date();
+  return d.toISOString().slice(0, 10);
 }
 
 function getTimeString() {
-  const d = new Date();
-  const hh = String(d.getHours()).padStart(2, "0");
-  const mm = String(d.getMinutes()).padStart(2, "0");
-  const ss = String(d.getSeconds()).padStart(2, "0");
-  return `${hh}:${mm}:${ss}`;
+  return new Date().toTimeString().slice(0, 8);
 }
 
-function getPrettyDate(dateKey) {
-  if (!dateKey) return "—";
-  const [y, m, d] = String(dateKey).split("-").map(Number);
-  const date = new Date(y, (m || 1) - 1, d || 1);
-  return date.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
-}
-
-function formatTimeAmPm(timeStr) {
-  if (!timeStr) return "—";
-  const parts = String(timeStr).split(":");
-  const hh = parseInt(parts[0], 10);
-  const mm = parts[1] ?? "00";
-  const ss = parts[2];
-  if (Number.isNaN(hh)) return String(timeStr);
-
-  const ampm = hh >= 12 ? "PM" : "AM";
-  const hour12 = ((hh + 11) % 12) + 1;
-  return ss ? `${hour12}:${mm}:${ss} ${ampm}` : `${hour12}:${mm} ${ampm}`;
+function formatTimeAmPm(t) {
+  if (!t) return "—";
+  const [h, m, s] = t.split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hh = ((h + 11) % 12) + 1;
+  return s ? `${hh}:${m.toString().padStart(2, "0")}:${s} ${ampm}` : `${hh}:${m} ${ampm}`;
 }
 
 // ===============================
-// SINGLE-FLIGHT + SOFT RATE LIMIT
+// GUARD
 // ===============================
-async function guarded(actionName, fn) {
+async function guarded(name, fn) {
+  if (!CAN_INTERACT) return;
+
   const now = Date.now();
-  if (now - lastActionAt < RATE_LIMIT_MS) {
-    showMessage("Slow down — one action at a time.", "error");
-    return;
-  }
+  if (now - lastActionAt < RATE_LIMIT_MS) return;
   lastActionAt = now;
 
-  if (isProcessing) {
-    showMessage("Please wait — finishing the previous action.", "error");
-    return;
-  }
-
+  if (isProcessing) return;
   isProcessing = true;
-  clearMessage();
   setButtonsDisabled(true);
 
   try {
     await fn();
-  } catch (err) {
-    const msg =
-      err?.message === "IDENTITY_MISMATCH"
-        ? 'This doesn’t match your saved identity statement exactly. Use "Save / Update Identity" if you evolved it.'
-        : err?.message === "AUTH_REQUIRED"
-          ? "Session expired. Please log in again."
-          : "Operation failed. Please try again.";
-
-    console.warn(`${actionName} failed.`, err);
-    showMessage(msg, "error");
+  } catch (e) {
+    showMessage("Operation failed. Please try again.", "error");
   } finally {
     isProcessing = false;
     setButtonsDisabled(false);
@@ -219,283 +161,72 @@ async function guarded(actionName, fn) {
 }
 
 // ===============================
-// AUTH (read session user_id)
-// ===============================
-async function getValidSessionUserId() {
-  const { data, error } = await supabase.auth.getUser();
-  if (error) return null;
-
-  const userId = data?.user?.id;
-  if (!userId || !isUUID(userId)) return null;
-  return userId;
-}
-
-// ===============================
 // DATA LOAD
 // ===============================
 async function loadState() {
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("nofap_streaks")
-    .select("identity_statement,current_streak,starting_day,last_checkin_date,last_checkin_time")
+    .select("*")
     .eq("user_id", currentUserId)
     .maybeSingle();
 
-  if (error && error.code !== "PGRST116") {
-    console.warn("loadState error:", error);
-    showMessage("Failed to load your streak data.", "error");
+  if (!data) {
     revealLoadedUI();
-    return null;
+    return;
   }
 
-  if (data) {
-    const stmtRaw = String(data.identity_statement ?? "");
-    const stmt = stmtRaw.trim() ? stmtRaw : "No identity saved yet. Your first check-in will lock it in.";
-    if (savedIdentityText) savedIdentityText.textContent = stmt;
+  savedIdentityText.textContent = data.identity_statement || "No identity saved yet.";
+  streakDayText.textContent = `Day ${(data.starting_day || 0) + (data.current_streak || 0)}`;
 
-    const base = Number(data.starting_day || 0);
-    const cur = Number(data.current_streak || 0);
-    if (streakDayText) streakDayText.textContent = `Day ${base + cur}`;
-
-    if (lastCheckInText) {
-      if (data.last_checkin_date) {
-        const pretty = getPrettyDate(data.last_checkin_date);
-        const timePretty = data.last_checkin_time ? formatTimeAmPm(data.last_checkin_time) : "--:--";
-        lastCheckInText.textContent = `Last Check-In: ${pretty} · ${timePretty}`;
-      } else {
-        lastCheckInText.textContent = "Last Check-In: —";
-      }
-    }
-
-    if (startingDayInput) startingDayInput.value = base ? String(base) : "";
-  } else {
-    if (savedIdentityText) savedIdentityText.textContent = "No identity saved yet. Your first check-in will lock it in.";
-    if (streakDayText) streakDayText.textContent = "Day 0";
-    if (lastCheckInText) lastCheckInText.textContent = "Last Check-In: —";
-    if (startingDayInput) startingDayInput.value = "";
+  if (data.last_checkin_date) {
+    lastCheckInText.textContent = `Last Check-In: ${data.last_checkin_date} · ${formatTimeAmPm(data.last_checkin_time)}`;
   }
 
   revealLoadedUI();
-  return data || null;
 }
 
 // ===============================
-// SET STREAK DAY
-// ===============================
-setStartingDayBtn?.addEventListener("click", () =>
-  guarded("setStartingDay", async () => {
-    if (!currentUserId) throw new Error("AUTH_REQUIRED");
-
-    const raw = String(startingDayInput?.value ?? "").trim();
-    const desiredTotal = parseInt(raw, 10);
-
-    if (Number.isNaN(desiredTotal) || desiredTotal < 0 || desiredTotal > MAX_STARTING_DAY) {
-      showMessage(`Enter a valid day (0–${MAX_STARTING_DAY}).`, "error");
-      return;
-    }
-
-    const { data: current, error: readErr } = await supabase
-      .from("nofap_streaks")
-      .select("identity_statement,current_streak,starting_day")
-      .eq("user_id", currentUserId)
-      .maybeSingle();
-
-    if (readErr && readErr.code !== "PGRST116") throw readErr;
-
-    if (!current) {
-      const { error } = await supabase.from("nofap_streaks").insert({
-        user_id: currentUserId,
-        identity_statement: "",
-        current_streak: 0,
-        starting_day: desiredTotal,
-        last_checkin_date: null,
-        last_checkin_time: null,
-      });
-      if (error) throw error;
-
-      await loadState();
-      showMessage(`Streak updated. Now displaying Day ${desiredTotal}.`, "success");
-      return;
-    }
-
-    const curStreak = Number(current.current_streak || 0);
-    const oldBase = Number(current.starting_day || 0);
-    const oldTotal = oldBase + curStreak;
-
-    if (desiredTotal < oldTotal) {
-      const ok = confirm(`You’re lowering your displayed day from ${oldTotal} to ${desiredTotal}. Continue?`);
-      if (!ok) return;
-    }
-
-    const newBase = Math.max(0, desiredTotal - curStreak);
-
-    const { error } = await supabase.from("nofap_streaks").update({ starting_day: newBase }).eq("user_id", currentUserId);
-    if (error) throw error;
-
-    await loadState();
-    showMessage(`Streak updated. Now displaying Day ${desiredTotal}.`, "success");
-  })
-);
-
-// ===============================
-// CHECK IN
+// ACTIONS (GUARDED)
 // ===============================
 checkInBtn?.addEventListener("click", () =>
   guarded("checkIn", async () => {
-    if (!currentUserId) throw new Error("AUTH_REQUIRED");
+    const input = sanitizeForStorage(identityInput.value);
+    if (!input) return;
 
-    const input = sanitizeForStorage(identityInput?.value ?? "");
-    if (!input.trim()) {
-      showMessage("Type your identity statement before checking in.", "error");
-      return;
-    }
+    const today = getTodayKey();
+    const now = getTimeString();
 
-    const todayKey = getTodayKey();
-    const nowTime = getTimeString();
-
-    const { data: current, error: readErr } = await supabase
+    const { data } = await supabase
       .from("nofap_streaks")
-      .select("identity_statement,current_streak,starting_day,last_checkin_date")
+      .select("*")
       .eq("user_id", currentUserId)
       .maybeSingle();
 
-    if (readErr && readErr.code !== "PGRST116") throw readErr;
-
-    if (!current) {
-      const { error } = await supabase.from("nofap_streaks").insert({
+    if (!data) {
+      await supabase.from("nofap_streaks").insert({
         user_id: currentUserId,
         identity_statement: input,
         current_streak: 1,
         starting_day: 0,
-        last_checkin_date: todayKey,
-        last_checkin_time: nowTime,
+        last_checkin_date: today,
+        last_checkin_time: now,
       });
-      if (error) throw error;
+    } else {
+      if (data.last_checkin_date === today) return;
 
-      if (savedIdentityText) savedIdentityText.textContent = input;
-      revealLoadedUI();
-
-      await loadState();
-      showMessage("Identity locked in. Day 1 of your NoFap + NoCorn streak has started.", "success");
-      return;
-    }
-
-    if (current.last_checkin_date === todayKey) {
-      const { error } = await supabase.from("nofap_streaks").update({ last_checkin_time: nowTime }).eq("user_id", currentUserId);
-      if (error) throw error;
-
-      await loadState();
-      showMessage("You’ve already checked in today. Streak stays the same, time updated.", "success");
-      return;
-    }
-
-    if (normalize(input) !== normalize(current.identity_statement)) throw new Error("IDENTITY_MISMATCH");
-
-    const nextStreak = Number(current.current_streak || 0) + 1;
-
-    const { error } = await supabase
-      .from("nofap_streaks")
-      .update({ current_streak: nextStreak, last_checkin_date: todayKey, last_checkin_time: nowTime })
-      .eq("user_id", currentUserId);
-
-    if (error) throw error;
-
-    await loadState();
-
-    const base = Number(current.starting_day || 0);
-    showMessage(`Check-in logged. You are now on Day ${base + nextStreak}.`, "success");
-  })
-);
-
-// ===============================
-// SAVE / UPDATE IDENTITY
-// ===============================
-saveIdentityBtn?.addEventListener("click", () =>
-  guarded("saveIdentity", async () => {
-    if (!currentUserId) throw new Error("AUTH_REQUIRED");
-
-    const input = sanitizeForStorage(identityInput?.value ?? "");
-    if (!input.trim()) {
-      showMessage("Type an identity statement before saving.", "error");
-      return;
-    }
-
-    const { data: current, error: readErr } = await supabase
-      .from("nofap_streaks")
-      .select("user_id")
-      .eq("user_id", currentUserId)
-      .maybeSingle();
-
-    if (readErr && readErr.code !== "PGRST116") throw readErr;
-
-    if (!current) {
-      const { error } = await supabase.from("nofap_streaks").insert({
-        user_id: currentUserId,
-        identity_statement: input,
-        current_streak: 0,
-        starting_day: 0,
-        last_checkin_date: null,
-        last_checkin_time: null,
-      });
-      if (error) throw error;
-
-      if (savedIdentityText) savedIdentityText.textContent = input;
-      revealLoadedUI();
-
-      await loadState();
-      showMessage('Identity saved. Now retype it exactly and press "Check In" to start Day 1.', "success");
-      return;
-    }
-
-    const { error } = await supabase.from("nofap_streaks").update({ identity_statement: input }).eq("user_id", currentUserId);
-    if (error) throw error;
-
-    if (savedIdentityText) savedIdentityText.textContent = input;
-    revealLoadedUI();
-
-    await loadState();
-    showMessage("Identity updated. Your streak stays the same.", "success");
-  })
-);
-
-// ===============================
-// RESET STREAK
-// ===============================
-resetStreakBtn?.addEventListener("click", () =>
-  guarded("resetStreak", async () => {
-    if (!currentUserId) throw new Error("AUTH_REQUIRED");
-
-    const ok = confirm(
-      "Are you sure you want to reset your streak? This will set you back to Day 0, but will keep your identity statement."
-    );
-    if (!ok) return;
-
-    const { error, count } = await supabase
-      .from("nofap_streaks")
-      .update({ current_streak: 0, starting_day: 0, last_checkin_date: null, last_checkin_time: null }, { count: "exact" })
-      .eq("user_id", currentUserId);
-
-    if (error) throw error;
-
-    if (!count) {
-      showMessage("No streak found to reset yet. Save an identity or check in first.", "error");
-      return;
+      await supabase
+        .from("nofap_streaks")
+        .update({
+          current_streak: data.current_streak + 1,
+          last_checkin_date: today,
+          last_checkin_time: now,
+        })
+        .eq("user_id", currentUserId);
     }
 
     await loadState();
-    showMessage("Streak reset to Day 0. Your identity statement is still saved.", "success");
   })
 );
-
-// ===============================
-// LOGOUT
-// ===============================
-btnLogout?.addEventListener("click", async () => {
-  try {
-    await supabase.auth.signOut();
-  } finally {
-    window.location.href = "LoginPage.html";
-  }
-});
 
 // ===============================
 // INIT
@@ -503,36 +234,36 @@ btnLogout?.addEventListener("click", async () => {
 async function init() {
   setButtonsDisabled(true);
   clearMessage();
-  updateCharCount();
-  identityInput?.addEventListener("input", updateCharCount);
 
-  supabase.auth.onAuthStateChange((_event, session) => {
-    if (!session?.user?.id) {
-      currentUserId = null;
-      window.location.href = "LoginPage.html";
-    }
-  });
+  const { data } = await supabase.auth.getSession();
+  const user = data?.session?.user;
 
-  try {
-    const user = await requireActiveSubscription({ returnTo: "NoCorn+NoFap.html" });
-    if (!user?.id) return;
-
-    const userId = await getValidSessionUserId();
-    if (!userId) {
-      window.location.href = "LoginPage.html";
-      return;
-    }
-
-    currentUserId = userId;
-
-    await loadState();
-    setButtonsDisabled(false);
-    showAppShell();
-  } catch (e) {
-    console.warn("NoFap init failed:", e);
-    showAuthGuard();
-    window.location.href = "LoginPage.html";
+  if (!user) {
+    enableDemoMode();
+    revealLoadedUI();
+    showEl(appShell);
+    return;
   }
+
+  const { data: sub } = await supabase
+    .from("user_subscriptions")
+    .select("is_active")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!sub?.is_active) {
+    enableDemoMode();
+    revealLoadedUI();
+    showEl(appShell);
+    return;
+  }
+
+  CAN_INTERACT = true;
+  currentUserId = user.id;
+
+  await loadState();
+  setButtonsDisabled(false);
+  showEl(appShell);
 }
 
 init();

@@ -563,3 +563,17 @@ section{ padding:36px 0; border-top:1px solid rgba(255,255,255,0.04); }
 .is-loading {
   visibility: hidden;
 }
+
+/* Demo preview lock */
+.demo-locked {
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.75;
+}
+
+.demo-locked input,
+.demo-locked textarea,
+.demo-locked button {
+  pointer-events: none !important;
+}
+

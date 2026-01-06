@@ -55,7 +55,31 @@ default-src 'self';
 </head>
 
 <body>
-  <div class="page">
+  <!-- DEMO GATE OVERLAY (preview mode) -->
+  <div id="demoGate" class="overlay is-hidden" role="dialog" aria-modal="true" aria-label="Preview mode">
+    <div class="guard-card">
+      <div class="guard-kicker">PREVIEW MODE</div>
+      <h2 class="guard-title">You’re viewing a demo</h2>
+      <p class="guard-sub">
+        You can explore the interface, but check-ins and saving are locked until you log in and subscribe.
+      </p>
+
+      <div class="btn-row">
+        <a class="btn-primary" href="LoginPage.html">Login / Sign Up</a>
+        <a class="btn-ghost" href="Paywall.html">Subscribe</a>
+      </div>
+
+      <p class="guard-sub guard-sub--fineprint">
+        Already subscribed? Log in and come back.
+      </p>
+    </div>
+  </div>
+
+
+
+
+
+  <div id="appShell" class="page">
     <header class="nav">
       <a class="nav-left" href="index.html" aria-label="Back to Home">
         <div class="logo-mark"><span>OS</span></div>
