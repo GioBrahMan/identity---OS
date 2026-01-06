@@ -1,0 +1,253 @@
+<!-- index.html (UPDATED to use external index.css + no inline styles) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Discipline OS — The Operating System for Your Life</title>
+
+  <meta http-equiv="Content-Security-Policy" content="
+default-src 'self';
+  base-uri 'self';
+  object-src 'none';
+  form-action 'self';
+
+  img-src 'self' data:;
+  font-src 'self' data:;
+
+  style-src 'self';
+  style-src-elem 'self';
+
+  script-src 'self' https://cdn.jsdelivr.net;
+  script-src-elem 'self' https://cdn.jsdelivr.net;
+
+  connect-src 'self'
+    https://ehwajpgvlzeojdmvloxw.supabase.co
+    wss://ehwajpgvlzeojdmvloxw.supabase.co
+    https://cdn.jsdelivr.net;
+
+  frame-ancestors 'none';
+  frame-src 'none';
+  worker-src 'none';
+  manifest-src 'self';
+  media-src 'self';
+
+  upgrade-insecure-requests;
+  block-all-mixed-content;
+">
+
+  <meta http-equiv="Referrer-Policy" content="no-referrer" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta http-equiv="Permissions-Policy" content="
+    camera=(),
+    microphone=(),
+    geolocation=(),
+    payment=(),
+    usb=(),
+    interest-cohort=()
+  " />
+
+
+  <!-- Performance (safe) -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://ehwajpgvlzeojdmvloxw.supabase.co" crossorigin>
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="dns-prefetch" href="https://ehwajpgvlzeojdmvloxw.supabase.co">
+
+
+  
+
+  <!-- ✅ External CSS -->
+  <link rel="stylesheet" href="./index.css" />
+</head>
+
+<body>
+  <noscript>
+    <div class="noscript">
+      JavaScript is required to use Discipline OS.
+    </div>
+  </noscript>
+
+  <div class="page">
+    <header class="nav">
+      <a href="index.html" class="nav-left home-link" aria-label="Go to home">
+        <div class="logo-mark"><span>OS</span></div>
+        <div class="logo-text">
+          <div class="logo-title">Discipline OS</div>
+          <div class="logo-sub">Life Operating System</div>
+        </div>
+      </a>
+
+      <div class="nav-right">
+        <div><a href="./NoCorn+NoFap.html">NO FAP + NO CORN</a></div>
+        <div><a href="./NoSocialMedia.html">HEALTHY SOCIAL MEDIA USAGE</a></div>
+        <div><a href="./MonkMode.html">MONK MODE</a></div>
+        <a href="LoginPage.html" id="loginLink">Login / Sign Up</a>
+        <button id="btnLogout" class="hidden" type="button">LOG OUT</button>
+      </div>
+
+    
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-col-left">
+          <div class="hero-kicker">A SYSTEM YOU INSTALL INTO YOUR LIFE</div>
+          <h1 class="hero-title">
+            <span>Discipline OS</span>
+            The operating system for a disciplined life.
+          </h1>
+          <p class="hero-sub">
+            Keep track of your NoFap + NoCorn streak, transform your relationship with social media, and lock in your Monk Mode protocol.<br>
+            No blocking. No avoiding. No forcing.<br>
+            Just shifting your identity one check-in at a time.
+          </p>
+
+          <div class="hero-meta-row">
+            <div class="hero-meta-pill"><span></span> Identity-first habit architecture</div>
+            <div class="hero-meta-pill"><span></span> 3 modules</div>
+          </div>
+        </div>
+
+        <div class="hero-col-right">
+          <div class="founder-card founder-card--compact">
+            <div class="founder-row-top">
+              <div class="founder-badge">
+                <div class="founder-avatar"></div>
+                <div class="founder-text">
+                  <div class="founder-name">The Founders' Streak Card</div>
+                  <div class="founder-tagline">Live</div>
+                </div>
+              </div>
+
+              <div class="founder-status-pill"><span></span>LIVE</div>
+            </div>
+
+
+            <div class="founder-streak founder-streak--mt14">
+              <div class="founder-streak-number"><span class="flame">🔥</span> Day 46</div>
+              <div class="founder-streak-caption">NoFap + NoCorn</div>
+            </div>
+
+            <div class="founder-streak founder-streak--mt16">
+              <div class="founder-streak-number"><span class="flame">📵</span><span class="day-text">Day 0</span></div>
+              <div class="founder-streak-caption">Healthy Social<br>Media Usage</div>
+            </div>
+
+            <div class="founder-streak founder-streak--mt16">
+              <div class="founder-streak-number"><span class="flame">🧘‍♂️</span><span class="day-text">Day 0</span></div>
+              <div class="founder-streak-caption">Monk Mode<br/>Jan 1, 2026 › June 19, 2026</div>
+            </div>
+
+            <div class="founder-footer">
+              <span>Last Check-In: December 8, 2025 · 3:37AM</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="modules">
+        <div class="section-label">System Modules</div>
+        <h2 class="section-heading">
+          All three modules to actually change your life — bundled into one operating system.
+        </h2>
+
+        <div class="module-grid">
+          <article class="module-card">
+            <div class="module-tag-row">
+              <div class="module-tag-left"><div class="module-tag-dot"></div><span>Module 01</span></div>
+            </div>
+            <div class="module-title">NoFap + NoCorn</div>
+            <div class="module-copy">
+              A NoFap + NoCorn identity streak built around a single typed statement — repeated every morning until abstinence becomes identity, not willpower.
+            </div>
+            <div class="module-metadata"><span></span><span></span></div>
+          </article>
+
+          <article class="module-card">
+            <div class="module-tag-row">
+              <div class="module-tag-left"><div class="module-tag-dot"></div><span>Module 02</span></div>
+            </div>
+            <div class="module-title">Healthy Social Media Usage</div>
+            <div class="module-copy">
+              Specify the content creators you enjoy watching or who add value to your life. Stop mindlessly scrolling and start using social media in a healthy way.
+            </div>
+            <div class="module-metadata"><span></span><span></span></div>
+          </article>
+
+          <article class="module-card">
+            <div class="module-tag-row">
+              <div class="module-tag-left"><div class="module-tag-dot"></div><span>Module 03</span></div>
+            </div>
+            <div class="module-title">Monk Mode</div>
+            <div class="module-copy">
+              A Monk Mode system that lets you define your rules and lock them in with daily typed check-ins — so discipline becomes automatic.
+            </div>
+            <div class="module-metadata"><span></span><span></span></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="core-principle">
+        <div class="section-label core-principle__label">Core Principle</div>
+        <h2 class="core-principle__heading">
+          Motivation fades.<br>Identity doesn't.
+        </h2>
+      </section>
+
+      <section id="pricing">
+        <div class="section-label">Membership</div>
+        <h2 class="section-heading">
+          One system. Three modules. A single decision: Join the Discipline OS movement or keep running your old life.
+        </h2>
+
+        <div class="pricing-grid">
+          <div>
+            <div class="pricing-card">
+              <div class="pricing-header">
+                <div class="pricing-title">Discipline OS Membership</div>
+                <div class="pricing-price">$5<span>/ month</span></div>
+              </div>
+
+              <ul class="pricing-list">
+                <li>Full access to all three modules: NoFap + NoCorn, Healthy Social Media Usage, Monk Mode.</li>
+                <li>Type your rules daily and track streaks that reinforce who you’re becoming.</li>
+                <li>Built for people who want to quit playing with their life and finally lock in.</li>
+              </ul>
+
+              <div class="pricing-footnote">No tiers. No upsells. Just discipline.</div>
+
+
+            </div>
+          </div>
+
+          <div>
+            <div class="pricing-card">
+              <div class="pricing-header"><div class="pricing-title">Membership Perks</div></div>
+
+              <ul class="pricing-list">
+                <li><strong>Live Weekend Q&A Sessions</strong><br>
+                  Open calls every Saturday and Sunday to help you build stronger identity statements and get direct guidance.</li>
+
+                <li><strong>Access to the founder's identity statements (all 3 protocols)</strong><br>
+                  Read the exact identity statements I type each morning for NoFap + NoCorn, Healthy Social Media Usage, and Monk Mode — use them as a template to create your personal identity statements.</li>
+              </ul>
+
+              <div class="pricing-footnote">Real accountability. Real community. Real identity shift.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-line">&gt; SYSTEM STATUS: OPERATIONAL</div>
+      <div class="footer-line">UPTIME: 00:00:01 · USER: ACTIVE</div>
+      <div class="footer-line">© Discipline OS · Life Operating System</div>
+    </footer>
+  </div>
+
+  <!-- External JS only (CSP-friendly) -->
+  <script type="module" src="./home.js"></script>
+</body>
+</html>

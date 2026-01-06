@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Discipline OS — Monk Mode Identity Module</title>
+
+  <meta http-equiv="Content-Security-Policy" content="
+default-src 'self';
+  base-uri 'self';
+  object-src 'none';
+  form-action 'self';
+
+  img-src 'self' data:;
+  font-src 'self' data:;
+
+  style-src 'self';
+  style-src-elem 'self';
+
+  script-src 'self' https://cdn.jsdelivr.net;
+  script-src-elem 'self' https://cdn.jsdelivr.net;
+
+  connect-src 'self'
+    https://ehwajpgvlzeojdmvloxw.supabase.co
+    wss://ehwajpgvlzeojdmvloxw.supabase.co
+    https://cdn.jsdelivr.net;
+
+  frame-ancestors 'none';
+  frame-src 'none';
+  worker-src 'none';
+  manifest-src 'self';
+  media-src 'self';
+
+  upgrade-insecure-requests;
+  block-all-mixed-content;
+">
+
+  <meta http-equiv="Referrer-Policy" content="no-referrer" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta http-equiv="Permissions-Policy" content="
+    camera=(),
+    microphone=(),
+    geolocation=(),
+    payment=(),
+    usb=(),
+    interest-cohort=()
+  " />
+
+
+  <link rel="stylesheet" href="./monkmode.css" />
+</head>
+
+<body>
+  <div class="page">
+    <!-- NAVBAR -->
+    <header class="nav">
+      <a class="nav-left" href="index.html" aria-label="Back to Home">
+        <div class="logo-mark">
+          <span>OS</span>
+        </div>
+        <div class="logo-text">
+          <div class="logo-title">Discipline OS</div>
+          <div class="logo-sub">Life Operating System</div>
+        </div>
+      </a>
+
+      <div class="nav-right">
+        <div><a href="NoCorn+NoFap.html">NO FAP + NO CORN</a></div>
+        <div><a href="NoSocialMedia.html">HEALTHY SOCIAL MEDIA USAGE</a></div>
+        <div><a class="is-active" href="MonkMode.html">MONK MODE</a></div>
+        <div>
+          <button id="btnLogout" class="nav-logout" type="button">
+            LOG OUT
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section>
+        <div class="section-label">Module 03 · Monk Mode</div>
+
+        <h1 class="section-heading">Monk Mode Identity Script</h1>
+
+        <p class="section-sub">
+          Every morning, you type your full Monk Mode script.
+          No shortcuts. No copying. You’re wiring your nervous system to recognize one thing: you are a person who honors your monk mode rules.
+        </p>
+
+        <div class="identity-layout">
+          <!-- LEFT: Identity console -->
+          <div class="identity-card">
+            <div class="identity-card-header">
+              <div>
+                <div class="pill-tag"><span>Identity Console</span> · Monk Mode</div>
+              </div>
+            </div>
+
+            <p class="identity-card-text">
+              First time here? Type your Monk Mode rules.
+              From tomorrow onward, you retype the exact same rules and press <strong>CHECK IN</strong> to advance your Monk Mode streak.
+              You can update your rules later without losing your streak — but only through <strong>SAVE / UPDATE SCRIPT</strong>.
+            </p>
+
+            <textarea
+              class="identity-textarea"
+              id="monkInput"
+              placeholder="Example Monk Mode Script:&#10;No movies / no tv shows. &#10;No more than 10 minutes a day on social media. &#10;No watching content other than Matan Even (10 minutes a day). &#10;No junk food / no junk drinks. &#10;No fapping / no corn videos. &#10;No skipping workouts. &#10;No hitting snooze on my alarm. &#10;No music other than when I'm at the gym."></textarea>
+
+            <div class="identity-meta">
+              Type with intent. Every line is a rule you live by.
+            </div>
+
+            <div class="identity-hint">
+              • Press <strong>CHECK IN</strong> once each morning to log your Monk Mode day.<br/>
+              • Press <strong>SAVE / UPDATE SCRIPT</strong> if you evolve your rules — your streak will remain.<br/>
+              • Press <strong>RESET STREAK</strong> if you break Monk Mode and want to rebuild from Day 0.
+            </div>
+
+            <div class="btn-row">
+              <button class="btn-primary" id="checkInBtn">Check In</button>
+              <button class="btn-ghost" id="saveScriptBtn">Save / Update Script</button>
+              <button class="btn-subtle" id="resetStreakBtn">Reset Streak</button>
+            </div>
+
+            <div id="message" class="message is-hidden"></div>
+          </div>
+
+          <!-- RIGHT: Streak Card -->
+          <aside class="streak-card">
+            <div class="streak-top-row">
+              <div class="streak-label">Your Monk Mode Streak</div>
+              <div class="streak-status-pill">
+                <span></span>
+                Active Module
+              </div>
+            </div>
+
+            <div class="streak-main">
+              <div class="streak-day">
+                <span class="flame">🧘‍♂️</span>
+                <span id="streakDayText">Day 0</span>
+              </div>
+              <div class="streak-caption">Monk Mode</div>
+            </div>
+
+            <div class="streak-identity-box">
+              <div class="streak-identity-label">Saved Monk Mode Script</div>
+              <div class="streak-identity-text is-loading" id="savedScriptText">
+No Monk Mode script saved yet. Your first check-in will lock it in.
+              </div>
+            </div>
+
+            <div class="streak-footer">
+              <span id="lastCheckInText">Last Check-In: —</span>
+              <span>Monk Mode is built one script at a time.</span>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <div class="footer-line">&gt; MODULE STATUS: ACTIVE · MONK MODE</div>
+      <div class="footer-line">UPTIME: 00:00:01 · USER: ONLINE</div>
+      <div class="footer-line">© Discipline OS · Life Operating System</div>
+    </footer>
+  </div>
+
+  <!-- External JS only (CSP-friendly) -->
+  <script type="module" src="./monkmode.js"></script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+:root{
+  --bg:#050608;
+  --ink:#f5f5f7;
+  --muted:#9ea2b0;
+  --border-soft:rgba(255,255,255,0.14);
+  --border-strong:rgba(255,255,255,0.32);
+  --shadow-soft:0 18px 60px rgba(0,0,0,0.85);
+}
+
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+
+body{
+  margin:0;
+  font-family:system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  color:var(--ink);
+  background:
+    radial-gradient(circle at 0% 0%, #181a23 0, transparent 55%),
+    radial-gradient(circle at 100% 0%, #181823 0, transparent 55%),
+    radial-gradient(circle at 50% 120%, #111219 0, var(--bg) 60%);
+  -webkit-font-smoothing:antialiased;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+}
+
+.card{
+  width:min(680px, 100%);
+  border-radius:20px;
+  border:1px solid var(--border-soft);
+  background:linear-gradient(180deg, rgba(0,0,0,0.92), rgba(0,0,0,0.98));
+  box-shadow:var(--shadow-soft);
+  padding:22px;
+}
+
+.title{
+  font-size:22px;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  margin:0 0 10px;
+}
+
+.sub{
+  color:var(--muted);
+  line-height:1.7;
+  font-size:13px;
+  margin:0 0 16px;
+}
+
+.actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:999px;
+  padding:12px 18px;
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  color:#050608;
+  background:linear-gradient(135deg, #ffffff, #e6e6ea);
+  border:1px solid transparent;
+  cursor:pointer;
+  text-decoration:none;
+}
+
+.btn-ghost{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:999px;
+  padding:12px 18px;
+  font-size:12px;
+  font-weight:500;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  color:var(--ink);
+  border:1px solid var(--border-strong);
+  background:transparent;
+  cursor:pointer;
+  text-decoration:none;
+}
+
+.hint{
+  margin-top:14px;
+  font-size:11px;
+  color:var(--muted);
+  line-height:1.6;
+}
+
+code{
+  font-family:ui-monospace, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+  font-size:11px;
+  color:rgba(245,245,247,0.92);
+}
+
+
+/* --- CSP cleanup: moved inline styles into CSS --- */
+.debug{
+  white-space:pre-wrap;
+  margin-top:10px;
+}

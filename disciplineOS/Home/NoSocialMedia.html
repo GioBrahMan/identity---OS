@@ -1,0 +1,193 @@
+<!-- Home/NoSocialMedia.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Discipline OS — Healthy Social Media Usage Module</title>
+
+  <meta http-equiv="Content-Security-Policy" content="
+default-src 'self';
+  base-uri 'self';
+  object-src 'none';
+  form-action 'self';
+
+  img-src 'self' data:;
+  font-src 'self' data:;
+
+  style-src 'self';
+  style-src-elem 'self';
+
+  script-src 'self' https://cdn.jsdelivr.net;
+  script-src-elem 'self' https://cdn.jsdelivr.net;
+
+  connect-src 'self'
+    https://ehwajpgvlzeojdmvloxw.supabase.co
+    wss://ehwajpgvlzeojdmvloxw.supabase.co
+    https://cdn.jsdelivr.net;
+
+  frame-ancestors 'none';
+  frame-src 'none';
+  worker-src 'none';
+  manifest-src 'self';
+  media-src 'self';
+
+  upgrade-insecure-requests;
+  block-all-mixed-content;
+">
+
+  <meta http-equiv="Referrer-Policy" content="no-referrer" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta http-equiv="Permissions-Policy" content="
+    camera=(),
+    microphone=(),
+    geolocation=(),
+    payment=(),
+    usb=(),
+    interest-cohort=()
+  " />
+
+
+  
+
+  <!-- External CSS -->
+  <link rel="stylesheet" href="./nosocial.css" />
+</head>
+
+<body>
+  <div class="page">
+    <header class="nav">
+      <a class="nav-left" href="index.html" aria-label="Back to Home">
+        <div class="logo-mark"><span>OS</span></div>
+        <div class="logo-text">
+          <div class="logo-title">Discipline OS</div>
+          <div class="logo-sub">Life Operating System</div>
+        </div>
+      </a>
+
+      <div class="nav-right">
+        <div><a href="NoCorn+NoFap.html">NO FAP + NO CORN</a></div>
+        <div><a href="NoSocialMedia.html" class="is-active" aria-current="page">HEALTHY SOCIAL MEDIA USAGE</a></div>
+        <div><a href="MonkMode.html">MONK MODE</a></div>
+        <div>
+          <button id="btnLogout" class="nav-logout" type="button">
+            LOG OUT
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section>
+        <div class="section-label">Module 02 · Healthy Social Media Usage</div>
+        <h1 class="section-heading">Healthy Social Media Usage Identity Streak</h1>
+        <p class="section-sub">This module helps you intentionally choose the content creators you watch and set clear boundaries for how you use social media.</p>
+
+        <div class="identity-layout">
+          <div class="identity-card">
+            <div class="identity-card-header">
+              <div>
+                <div class="pill-tag"><span>Identity Console</span> · Healthy Social Media Usage</div>
+              </div>
+            </div>
+
+            <p class="identity-card-text">
+              Start by listing the content creators you genuinely enjoy watching or add value to your life.
+              <br />
+              Being intentional about who you watch reduces mindless scrolling.
+              <br />
+              The rule is simple: 10 minutes a day. No more. No less.
+            </p>
+
+            <div class="soft-divider"></div>
+            <div class="identity-meta">Content creators you genuinely enjoy watching or add value to your life.</div>
+            <textarea
+              class="identity-textarea sites-textarea"
+              id="sitesInput"
+              class="identity-textarea sites-textarea"
+              autocomplete="off"
+              spellcheck="false"
+              autocorrect="off"
+              autocapitalize="off"
+              
+              placeholder="Example:&#10;Matan Even (youtube)&#10;gioBrah (youtube)"
+            ></textarea>
+
+
+            <div class="soft-divider"></div>
+            <div class="identity-meta identity-meta--tight">
+              Healthy Social Media Usage Identity Statement (10 minutes a day. No more. No less.)
+            </div>
+            <p class="identity-card-text identity-card-text--tight">
+              Write one identity statement that explains why you choose to intentionally use social media as well as how you will achieve a healthy relationship with social media.
+            </p>
+            <textarea
+              class="identity-textarea"
+              id="identityInput"
+              placeholder="Example:&#10;I choose to intentionally use social media because life is too short to spend more than 10 minutes a day consuming content through a screen.&#10;Before opening social media, I will always start a 10-minute timer.&#10;When it ends, I exit out of whatever social media I am on.&#10;After hitting my 10 minutes for the day, I will not access social media until the following day"
+            ></textarea>
+
+            <div class="identity-meta">Type with intent. These words define how you use your attention.</div>
+            <div class="identity-hint">
+              • Press <strong>CHECK IN</strong> once each morning to log your day.<br />
+              • Press <strong>SAVE / UPDATE IDENTITY</strong> to update your content creators list and identity — your streak stays the same.<br />
+              • Press <strong>I SLIPPED TODAY</strong> to reset your streak back to Day 0. Hard mode only.
+            </div>
+
+            <div class="btn-row">
+              <button class="btn-primary" id="checkInBtn">Check In</button>
+              <button class="btn-ghost" id="saveIdentityBtn">Save / Update Identity</button>
+              <button class="btn-subtle" id="slipBtn">I Slipped Today</button>
+            </div>
+
+            <div id="message" class="message is-hidden"></div>
+          </div>
+
+          <aside class="streak-card">
+            <div class="streak-top-row">
+              <div class="streak-label">Your Identity Streak</div>
+              <div class="streak-status-pill"><span></span>Active Module</div>
+            </div>
+
+            <div class="streak-main">
+              <div class="streak-day">
+                <span class="flame">📵</span>
+                <span id="streakDayText">Day 0</span>
+              </div>
+              <div class="streak-caption">Healthy Social Media Usage</div>
+            </div>
+
+            <div class="streak-sites-box">
+              <div class="streak-sites-label">Content creators you choose to watch</div>
+              <div class="streak-sites-text is-loading" id="savedSitesText">
+                No content creators listed yet. Start by naming the content creators you enjoy watching or add value to your life.
+              </div>
+            </div>
+
+            <div class="streak-identity-box">
+              <div class="streak-identity-label">Saved Identity Statement</div>
+              <div class="streak-identity-text is-loading" id="savedIdentityText">
+                No identity saved yet. Your first check-in will lock it in.
+              </div>
+            </div>
+
+            <div class="streak-footer">
+              <span id="lastCheckInText">Last Check-In: —</span>
+              <span>Attention is your currency. Protect it.</span>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-line">&gt; MODULE STATUS: ACTIVE · HEALTHY SOCIAL MEDIA USAGE</div>
+      <div class="footer-line">UPTIME: 00:00:01 · USER: ONLINE</div>
+      <div class="footer-line">© Discipline OS · Life Operating System</div>
+    </footer>
+  </div>
+
+  <!-- External JS (you already have / will create this file) -->
+  <script type="module" src="./nosocial.js"></script>
+</body>
+</html>

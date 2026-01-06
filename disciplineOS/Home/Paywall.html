@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Discipline OS — Subscribe</title>
+
+  <meta http-equiv="Content-Security-Policy" content="
+default-src 'self';
+  base-uri 'self';
+  object-src 'none';
+  form-action 'self';
+
+  img-src 'self' data:;
+  font-src 'self' data:;
+
+  style-src 'self';
+  style-src-elem 'self';
+
+  script-src 'self' https://cdn.jsdelivr.net;
+  script-src-elem 'self' https://cdn.jsdelivr.net;
+
+  connect-src 'self'
+    https://ehwajpgvlzeojdmvloxw.supabase.co
+    wss://ehwajpgvlzeojdmvloxw.supabase.co
+    https://cdn.jsdelivr.net;
+
+  frame-ancestors 'none';
+  frame-src 'none';
+  worker-src 'none';
+  manifest-src 'self';
+  media-src 'self';
+
+  upgrade-insecure-requests;
+  block-all-mixed-content;
+">
+
+  <meta http-equiv="Referrer-Policy" content="no-referrer" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta http-equiv="Permissions-Policy" content="
+    camera=(),
+    microphone=(),
+    geolocation=(),
+    payment=(),
+    usb=(),
+    interest-cohort=()
+  " />
+
+
+  
+
+  <link rel="stylesheet" href="./Paywall.css" />
+</head>
+<body>
+  <main class="card" role="main" aria-labelledby="title">
+    <h1 id="title" class="title">Subscription Required</h1>
+    <p class="sub">
+      You need an active subscription to access Discipline OS modules.
+      After you pay, return here — we’ll automatically unlock access once your account is active.
+    </p>
+
+    <div class="actions">
+      <a class="btn"
+         href="https://buy.stripe.com/28E28jcGdeF5fh19wla3u00"
+         target="_blank"
+         rel="noopener noreferrer nofollow"
+         referrerpolicy="no-referrer">
+        Subscribe
+      </a>
+
+      <a class="btn-ghost" href="LoginPage.html">Back to Login</a>
+      <a class="btn-ghost" href="index.html">Back to Home</a>
+    </div>
+
+    <p class="hint" id="hint">Checking your account…</p>
+    <pre class="hint debug" id="debug"></pre>
+
+  </main>
+
+  <!-- Optional: auto-check access after payment -->
+  <script type="module" src="./paywall.js"></script>
+</body>
+</html>

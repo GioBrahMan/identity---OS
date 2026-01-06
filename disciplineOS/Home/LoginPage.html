@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Discipline OS — Login</title>
+
+  <meta http-equiv="Content-Security-Policy" content="
+default-src 'self';
+  base-uri 'self';
+  object-src 'none';
+  form-action 'self';
+
+  img-src 'self' data:;
+  font-src 'self' data:;
+
+  style-src 'self';
+  style-src-elem 'self';
+
+  script-src 'self' https://cdn.jsdelivr.net;
+  script-src-elem 'self' https://cdn.jsdelivr.net;
+
+  connect-src 'self'
+    https://ehwajpgvlzeojdmvloxw.supabase.co
+    wss://ehwajpgvlzeojdmvloxw.supabase.co
+    https://cdn.jsdelivr.net;
+
+  frame-ancestors 'none';
+  frame-src 'none';
+  worker-src 'none';
+  manifest-src 'self';
+  media-src 'self';
+
+  upgrade-insecure-requests;
+  block-all-mixed-content;
+">
+
+  <meta http-equiv="Referrer-Policy" content="no-referrer" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta http-equiv="Permissions-Policy" content="
+    camera=(),
+    microphone=(),
+    geolocation=(),
+    payment=(),
+    usb=(),
+    interest-cohort=()
+  " />
+
+
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="preconnect" href="https://ehwajpgvlzeojdmvloxw.supabase.co" crossorigin />
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
+  <link rel="dns-prefetch" href="https://ehwajpgvlzeojdmvloxw.supabase.co" />
+
+  <link rel="stylesheet" href="./login.css" />
+</head>
+
+<body>
+  <noscript>
+    <div class="noscript">
+      JavaScript is required to log in to Discipline OS.
+    </div>
+  </noscript>
+
+  <div class="page">
+    <header class="nav">
+      <a class="nav-left" href="index.html" aria-label="Go to home">
+        <div class="logo-mark" aria-hidden="true"><span>OS</span></div>
+        <div class="logo-text">
+          <div class="logo-title">Discipline OS</div>
+          <div class="logo-sub">Life Operating System</div>
+        </div>
+      </a>
+      <div></div>
+    </header>
+
+    <main class="wrap">
+      <section class="card">
+        <div class="kicker">ACCESS CONTROL</div>
+        <h1 class="title">Log in to your operating system.</h1>
+        <p class="sub">
+          Your streaks, rules, and identity scripts are tied to your account — so your discipline persists across sessions.
+          No noise. No feed. Just the daily check-in.
+        </p>
+        <div class="divider"></div>
+        <div class="kicker">WHAT HAPPENS NEXT</div>
+        <p class="sub sub-tight">
+          After login, you’ll be redirected into the app.
+        </p>
+      </section>
+
+      <section class="card">
+        <div class="kicker">ACCOUNT</div>
+        <h2 class="title title-sm">Create or access your account.</h2>
+        <p class="sub sub-gap">Email + password. That's it.</p>
+
+        <form class="form" id="authForm" autocomplete="on" novalidate>
+          <div class="field">
+            <label class="label" for="email">Email</label>
+            <input
+              class="input"
+              id="email"
+              name="email"
+              type="email"
+              inputmode="email"
+              autocapitalize="none"
+              autocomplete="username email"
+              spellcheck="false"
+              placeholder="you@example.com"
+              required
+              aria-describedby="msg"
+            />
+          </div>
+
+          <div class="field">
+            <label class="label" for="password">Password</label>
+            <input
+              class="input"
+              id="password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              minlength="8"
+              placeholder="••••••••"
+              required
+              aria-describedby="msg"
+            />
+          </div>
+
+          <div class="btn-row">
+            <button class="btn-primary" id="btnLogin" type="submit">Log In</button>
+            <button class="btn-ghost" id="btnSignup" type="button">Sign Up</button>
+            <button class="forgot-btn" id="btnForgot" type="button">Forgot password?</button>
+          </div>
+
+          <div id="msg" class="message" role="status" aria-live="polite"></div>
+
+          <div class="divider"></div>
+
+          <a
+            href="https://buy.stripe.com/28E28jcGdeF5fh19wla3u00"
+            target="_blank"
+            rel="noopener noreferrer nofollow"
+            referrerpolicy="no-referrer"
+            class="btn-primary"
+            aria-label="Subscribe to Discipline OS for $5 per month"
+          >
+            Unlock Access · $4/mo
+          </a>
+
+          <div class="sub sub-after-cta">
+            Secure checkout · Cancel anytime
+          </div>
+
+          <div class="privacy-note">
+            We never ask for personal profile info here — just email + password to sync your streaks.
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-line">&gt; SYSTEM STATUS: OPERATIONAL</div>
+      <div class="footer-line">© Discipline OS · Life Operating System</div>
+      <div class="footer-line"><span id="year"></span></div>
+    </footer>
+  </div>
+
+  <script type="module" src="./login.js"></script>
+</body>
+</html>

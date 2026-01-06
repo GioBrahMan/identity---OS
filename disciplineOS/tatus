@@ -1,0 +1,11 @@
+[35mHome/LoginPage.html[m[36m:[m[32m20[m[36m:[m  <link rel="preconnect" href="https://ehwajpgvlzeojdmvloxw.[1;31msupabase.co[m" crossorigin />
+[35mHome/LoginPage.html[m[36m:[m[32m22[m[36m:[m  <link rel="dns-prefetch" href="https://ehwajpgvlzeojdmvloxw.[1;31msupabase.co[m" />
+[35mHome/NoCorn+NoFap.html[m[36m:[m[32m23[m[36m:[m  <link rel="preconnect" href="https://ehwajpgvlzeojdmvloxw.[1;31msupabase.co[m" crossorigin />
+[35mHome/home.js[m[36m:[m[32m4[m[36m:[mconst SUPABASE_URL = "https://ehwajpgvlzeojdmvloxw.[1;31msupabase.co[m";
+[35mHome/index.html[m[36m:[m[32m11[m[36m:[m  <link rel="preconnect" href="https://ehwajpgvlzeojdmvloxw.[1;31msupabase.co[m" crossorigin>
+[35mHome/index.html[m[36m:[m[32m13[m[36m:[m  <link rel="dns-prefetch" href="https://ehwajpgvlzeojdmvloxw.[1;31msupabase.co[m">
+[35mHome/index.html[m[36m:[m[32m36[m[36m:[m    connect-src 'self' https://ehwajpgvlzeojdmvloxw.[1;31msupabase.co[m wss://ehwajpgvlzeojdmvloxw.[1;31msupabase.co[m https://cdn.jsdelivr.net;
+[35mHome/paywall.js[m[36m:[m[32m9[m[36m:[mconst SUPABASE_URL = "https://ehwajpgvlzeojdmvloxw.[1;31msupabase.co[m";
+[35mHome/resetpassword.js[m[36m:[m[32m11[m[36m:[mconst SUPABASE_URL = "https://ehwajpgvlzeojdmvloxw.[1;31msupabase.co[m";
+[35mMonkMode.html[m[36m:[m[32m744[m[36m:[m  const SUPABASE_URL = "https://ehwajpgvlzeojdmvloxw.[1;31msupabase.co[m"
+[35mNoSocialMedia.html[m[36m:[m[32m661[m[36m:[m  const SUPABASE_URL = "https://ehwajpgvlzeojdmvloxw.[1;31msupabase.co[m"

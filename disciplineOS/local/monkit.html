@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Discipline OS — Monk Mode (Local)</title>
+
+  <style>
+    :root{
+      --bg:#050608;
+      --bg-soft:#0b0c10;
+      --ink:#f5f5f7;
+      --muted:#9ea2b0;
+
+      --border-soft:rgba(255,255,255,0.14);
+      --border-strong:rgba(255,255,255,0.32);
+      --glass:linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.01));
+
+      --shadow-soft:0 18px 60px rgba(0,0,0,0.85);
+      --shadow-card:0 24px 80px rgba(0,0,0,0.95);
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+
+    body{
+      margin:0;
+      font-family:system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at 0% 0%, #181a23 0, transparent 55%),
+        radial-gradient(circle at 100% 0%, #181823 0, transparent 55%),
+        radial-gradient(circle at 50% 120%, #111219 0, var(--bg) 60%);
+      -webkit-font-smoothing:antialiased;
+      scroll-behavior:smooth;
+    }
+
+    a, a:visited { color: var(--ink); text-decoration: none; }
+    a:hover { color:#fff; text-decoration:none; }
+    a:active { color: var(--ink); }
+
+    .nav-right a{
+      color: var(--muted);
+      transition: color 0.2s ease, text-shadow 0.2s ease;
+    }
+    .nav-right a:hover{
+      color: var(--ink);
+      text-shadow: 0 0 6px rgba(255,255,255,0.35);
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      opacity:0.14;
+      z-index:0;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='noStitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+      mix-blend-mode:screen;
+    }
+
+    .page{
+      position:relative;
+      z-index:1;
+      max-width:1120px;
+      margin:0 auto;
+      padding:24px 20px 80px;
+    }
+
+    .nav{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      padding:6px 6px 18px;
+      border-bottom:1px solid rgba(255,255,255,0.04);
+      position:sticky;
+      top:0;
+      backdrop-filter:blur(18px);
+      background:linear-gradient(to bottom, rgba(5,6,8,0.9), rgba(5,6,8,0.75), transparent);
+      z-index:10;
+    }
+
+    .nav-left{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      cursor:pointer;
+    }
+
+    .nav-right{
+      display:flex;
+      gap:18px;
+      align-items:center;
+      font-size:12px;
+      letter-spacing:0.18em;
+      text-transform:uppercase;
+      color:var(--muted);
+    }
+
+    .nav-right div{ position:relative; padding-right:18px; }
+    .nav-right div:not(:last-child)::after{
+      content:"·";
+      position:absolute;
+      right:0;
+      opacity:0.9;
+      font-weight:600;
+    }
+
+    .logo-mark{
+      width:26px;
+      height:26px;
+      border-radius:7px;
+      border:1px solid var(--border-strong);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:0 0 0 1px rgba(255,255,255,0.04), 0 12px 40px rgba(0,0,0,0.8);
+      background:radial-gradient(circle at 30% 0%, rgba(255,255,255,0.18), transparent 60%);
+      position:relative;
+      overflow:hidden;
+    }
+    .logo-mark::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(135deg, rgba(255,255,255,0.18), transparent 60%);
+      mix-blend-mode:soft-light;
+      opacity:0.7;
+    }
+    .logo-mark span{ font-size:12px; font-weight:600; letter-spacing:0.08em; }
+
+    .logo-text{ display:flex; flex-direction:column; gap:1px; }
+    .logo-title{ font-size:14px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; }
+    .logo-sub{ font-size:10px; text-transform:uppercase; letter-spacing:0.14em; color:var(--muted); opacity:0.9; }
+
+    .btn-primary,.btn-ghost,.btn-subtle{
+      border-radius:999px;
+      padding:10px 18px;
+      font-size:12px;
+      font-weight:500;
+      letter-spacing:0.18em;
+      text-transform:uppercase;
+      border:1px solid transparent;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      text-decoration:none;
+      transition:all 0.2s ease-out;
+      position:relative;
+      overflow:hidden;
+      white-space:nowrap;
+      background:none;
+    }
+
+    .btn-primary{
+      color:var(--bg);
+      background:linear-gradient(135deg, #ffffff, #e6e6ea);
+      box-shadow:0 12px 40px rgba(0,0,0,0.95);
+    }
+    .btn-primary::after{
+      content:"";
+      position:absolute;
+      inset:-40%;
+      background:linear-gradient(120deg, rgba(255,255,255,0.5), transparent 55%);
+      opacity:0;
+      transform:translateX(-40%);
+      transition:opacity 0.25s ease-out, transform 0.45s ease-out;
+    }
+    .btn-primary:hover::after{ opacity:1; transform:translateX(0%); }
+    .btn-primary:hover{ transform:translateY(-1px) scale(1.01); box-shadow:0 18px 55px rgba(0,0,0,0.9); }
+
+    .btn-ghost{
+      color:var(--ink);
+      border-color:var(--border-soft);
+      background:radial-gradient(circle at 0 0, rgba(255,255,255,0.08), transparent 60%);
+    }
+    .btn-ghost:hover{
+      border-color:var(--border-strong);
+      background:radial-gradient(circle at 0 0, rgba(255,255,255,0.16), transparent 60%);
+      transform:translateY(-1px);
+    }
+
+    .btn-subtle{
+      color:var(--muted);
+      border-color:rgba(255,255,255,0.12);
+      background:transparent;
+      font-size:10px;
+      padding:7px 14px;
+    }
+    .btn-subtle:hover{
+      border-color:rgba(255,255,255,0.3);
+      color:var(--ink);
+      transform:translateY(-1px);
+    }
+
+    .btn-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:16px;
+      align-items:center;
+    }
+
+    section{ padding:36px 0; border-top:1px solid rgba(255,255,255,0.04); }
+
+    .section-label{
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:0.26em;
+      color:var(--muted);
+      margin-bottom:12px;
+    }
+
+    .section-heading{
+      font-size:24px;
+      line-height:1.35;
+      max-width:540px;
+      margin-bottom:8px;
+    }
+
+    .section-sub{
+      font-size:13px;
+      color:var(--muted);
+      max-width:520px;
+      line-height:1.8;
+    }
+
+    .identity-layout{
+      margin-top:26px;
+      display:grid;
+      grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);
+      gap:28px;
+      align-items:flex-start;
+    }
+
+    .identity-card{
+      border-radius:20px;
+      border:1px solid var(--border-soft);
+      background:
+        radial-gradient(circle at 0 0, rgba(255,255,255,0.15), transparent 60%),
+        linear-gradient(180deg, rgba(0,0,0,0.92), rgba(0,0,0,0.98));
+      box-shadow:var(--shadow-soft);
+      padding:18px 18px 18px;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+    }
+
+    .identity-card-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+    }
+
+    .pill-tag{
+      font-size:10px;
+      text-transform:uppercase;
+      letter-spacing:0.22em;
+      color:var(--muted);
+    }
+    .pill-tag span{ color:rgba(245,245,247,0.9); }
+
+    .identity-card-title{
+      font-size:16px;
+      font-weight:500;
+      margin-bottom:4px;
+    }
+
+    .identity-card-text{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.8;
+    }
+
+    .identity-meta{
+      font-size:10px;
+      text-transform:uppercase;
+      letter-spacing:0.18em;
+      color:var(--muted);
+      margin-top:2px;
+    }
+
+    .identity-textarea{
+      width:100%;
+      min-height:260px;
+      max-height:380px;
+      resize:none;
+      overflow-y:auto;
+      border-radius:14px;
+      border:1px solid var(--border-soft);
+      background:radial-gradient(circle at 0 0, rgba(255,255,255,0.08), transparent 60%);
+      padding:14px 15px;
+      font-size:13px;
+      line-height:1.7;
+      color:var(--ink);
+      font-family:inherit;
+      outline:none;
+      box-shadow:inset 0 0 0 1px rgba(0,0,0,0.7);
+      white-space:pre-wrap;
+    }
+
+    .identity-textarea::placeholder{ color:rgba(158,162,176,0.9); }
+    .identity-textarea::-webkit-scrollbar { width:6px; }
+    .identity-textarea::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.18); border-radius:999px; }
+    .identity-textarea::-webkit-scrollbar-thumb:hover { background:rgba(255,255,255,0.35); }
+
+    .identity-hint{
+      font-size:11px;
+      color:var(--muted);
+      line-height:1.6;
+      margin-top:4px;
+    }
+
+    .message{
+      margin-top:8px;
+      font-size:11px;
+      line-height:1.5;
+      padding:8px 10px;
+      border-radius:10px;
+      border:1px solid transparent;
+    }
+    .message.success{
+      border-color:rgba(76,242,158,0.5);
+      background:rgba(13,45,25,0.9);
+      color:rgba(214,252,231,0.96);
+    }
+    .message.error{
+      border-color:rgba(255,120,120,0.7);
+      background:rgba(56,9,9,0.95);
+      color:rgba(255,216,216,0.98);
+    }
+
+    .streak-card{
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,0.22);
+      background:
+        radial-gradient(circle at 0 0, rgba(255,255,255,0.18), transparent 60%),
+        linear-gradient(180deg, rgba(0,0,0,0.9), rgba(0,0,0,0.98));
+      box-shadow:var(--shadow-card);
+      padding:16px;
+      font-size:11px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+
+      position:relative;
+      position:sticky;
+      top:92px;
+      align-self:start;
+      max-height:calc(100vh - 110px);
+
+      overflow-y:auto;
+      overflow-x:hidden;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+
+      scrollbar-width:none;
+    }
+    .streak-card::-webkit-scrollbar{ width:0; height:0; }
+
+    .streak-card::before{
+      content:"MONK MODE STREAK";
+      position:absolute;
+      top:10px;
+      right:-40px;
+      font-size:9px;
+      text-transform:uppercase;
+      letter-spacing:0.25em;
+      color:rgba(255,255,255,0.14);
+      transform:rotate(-28deg);
+    }
+
+    .streak-top-row{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+
+    .streak-label{
+      font-size:10px;
+      text-transform:uppercase;
+      letter-spacing:0.22em;
+      color:var(--muted);
+    }
+
+    .streak-status-pill{
+      font-size:9px;
+      text-transform:uppercase;
+      letter-spacing:0.18em;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.24);
+      padding:4px 8px;
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+
+    @keyframes livePulse{
+      0%{ box-shadow:0 0 4px rgba(76,242,158,0.4); transform:scale(1); }
+      50%{ box-shadow:0 0 10px rgba(76,242,158,0.9); transform:scale(1.15); }
+      100%{ box-shadow:0 0 4px rgba(76,242,158,0.4); transform:scale(1); }
+    }
+
+    .streak-status-pill span{
+      width:6px;
+      height:6px;
+      border-radius:999px;
+      background:#4cf29e;
+      border:1px solid #4cf29e;
+      animation:livePulse 1.8s ease-in-out infinite;
+    }
+
+    .streak-main{ margin-top:6px; }
+
+    .streak-day{
+      font-size:26px;
+      font-weight:600;
+      letter-spacing:0.12em;
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+
+    .flame{ font-size:18px; filter:drop-shadow(0 0 8px rgba(255,255,255,0.7)); }
+
+    .streak-caption{
+      font-size:10px;
+      text-transform:uppercase;
+      letter-spacing:0.16em;
+      color:var(--muted);
+      margin-top:4px;
+    }
+
+    .streak-identity-box{
+      margin-top:12px;
+      border-radius:12px;
+      border:1px dashed rgba(255,255,255,0.22);
+      padding:8px 10px;
+      background:radial-gradient(circle at 0 0, rgba(255,255,255,0.08), transparent 60%);
+      font-size:11px;
+      line-height:1.7;
+    }
+
+    .streak-identity-label{
+      font-size:10px;
+      text-transform:uppercase;
+      letter-spacing:0.16em;
+      color:var(--muted);
+      margin-bottom:4px;
+    }
+
+    .streak-identity-text{
+      font-family:ui-monospace, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      white-space:pre-wrap;
+    }
+
+    .streak-footer{
+      margin-top:10px;
+      padding-top:8px;
+      border-top:1px dashed rgba(255,255,255,0.22);
+      font-size:9px;
+      text-transform:uppercase;
+      letter-spacing:0.2em;
+      color:rgba(245,245,247,0.8);
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    @media (max-width:900px){
+      .identity-layout{ grid-template-columns:minmax(0,1fr); }
+    }
+    @media (max-width:680px){
+      .nav{ flex-direction:column; align-items:flex-start; gap:10px; padding-bottom:14px; }
+      .page{ padding-inline:16px; }
+    }
+
+    .footer{
+      border-top:1px solid rgba(255,255,255,0.06);
+      padding-top:18px;
+      margin-top:40px;
+      font-family:ui-monospace, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size:11px;
+      color:var(--muted);
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .footer-line{ white-space:nowrap; }
+
+    /* Tiny inputs inside streak card */
+    .mini-input{
+      flex:1;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.14);
+      background:rgba(255,255,255,0.06);
+      color:var(--ink);
+      padding:10px 12px;
+      outline:none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <!-- NAVBAR -->
+    <header class="nav">
+      <div class="nav-left" id="homeBtn" title="Home">
+        <div class="logo-mark"><span>OS</span></div>
+        <div class="logo-text">
+          <div class="logo-title">Discipline OS</div>
+          <div class="logo-sub">Life Operating System</div>
+        </div>
+      </div>
+
+      <div class="nav-right">
+        <!-- Local version: these can point to your local files if you want -->
+        <!-- <div><a href="NoSocialMediaLocal.html">HEALTHY SOCIAL MEDIA USAGE</a></div> -->
+        <div><a href="NoCorn+NoFap.html">NO FAP + NO CORN</a></div>
+        <div><a href="MonkModeLocal.html">MONK MODE</a></div>
+      </div>
+    </header>
+
+    <main>
+      <section>
+        <div class="section-label">Module 01 · Monk Mode (Local)</div>
+        <h1 class="section-heading">Monk Mode Identity Script</h1>
+        <p class="section-sub">
+          Every morning, you type your full Monk Mode script.
+          No shortcuts. No copying. You’re wiring your nervous system to recognize one thing:
+          you are a person who honors your Monk Mode rules.
+        </p>
+
+        <div class="identity-layout">
+          <!-- LEFT -->
+          <div class="identity-card">
+            <div class="identity-card-header">
+              <div>
+                <div class="pill-tag"><span>Identity Console</span> · Monk Mode</div>
+                <div class="identity-card-title">Type your full Monk Mode script</div>
+              </div>
+            </div>
+
+            <p class="identity-card-text">
+              First time here? Type the <strong>full script</strong> of your Monk Mode rules.
+              From tomorrow onward, retype the exact same script and press <strong>CHECK IN</strong> to advance your streak.
+              You can update the script later without losing your streak — but only through <strong>SAVE / UPDATE SCRIPT</strong>.
+            </p>
+
+            <textarea
+              class="identity-textarea"
+              id="monkInput"
+              placeholder="Example Monk Mode Script:&#10;No movies / no tv shows.&#10;No more than 10 minutes a day on social media.&#10;No junk food / no junk drinks.&#10;No fapping / no corn videos.&#10;No skipping workouts.&#10;No hitting snooze on my alarm.&#10;No music other than when I'm at the gym."
+            ></textarea>
+
+            <div class="identity-meta">Type with intent. Every line is a rule you live by.</div>
+
+            <div class="identity-hint">
+              • Press <strong>CHECK IN</strong> once each morning to log your Monk Mode day.<br/>
+              • Press <strong>SAVE / UPDATE SCRIPT</strong> if you evolve your rules — your streak will remain.<br/>
+              • Press <strong>RESET STREAK</strong> if you break Monk Mode and want to rebuild from Day 0.
+            </div>
+
+            <div class="btn-row">
+              <button class="btn-primary" id="checkInBtn" type="button">Check In</button>
+              <button class="btn-ghost" id="saveScriptBtn" type="button">Save / Update Script</button>
+              <button class="btn-subtle" id="resetStreakBtn" type="button">Reset Streak</button>
+            </div>
+
+            <div id="message" class="message" style="display:none;"></div>
+          </div>
+
+          <!-- RIGHT -->
+          <aside class="streak-card">
+            <div class="streak-top-row">
+              <div class="streak-label">Your Monk Mode Streak</div>
+              <div class="streak-status-pill"><span></span> Active Module</div>
+            </div>
+
+            <div class="streak-main">
+              <!-- Optional: base day setter (like NoFap local) -->
+              <div style="margin-top:10px; border-top:1px dashed rgba(255,255,255,0.18); padding-top:10px;">
+                <div class="streak-label" style="margin-bottom:8px;">Already have a streak?</div>
+                <div style="display:flex; gap:8px; align-items:center;">
+                  <input id="startingDayInput" class="mini-input" type="number" min="0" max="9999" placeholder="e.g. 46" />
+                  <button class="btn-subtle" id="setStartingDayBtn" type="button">Set</button>
+                </div>
+                <div style="margin-top:6px; font-size:10px; color:var(--muted); line-height:1.5;">
+                  Sets your base streak once. Daily check-ins add on top.
+                </div>
+              </div>
+
+              <div class="streak-day" style="margin-top:12px;">
+                <span class="flame">🧘‍♂️</span>
+                <span id="streakDayText">Day 0</span>
+              </div>
+              <div class="streak-caption">Monk Mode · Script Typed & Logged</div>
+            </div>
+
+            <div class="streak-identity-box">
+              <div class="streak-identity-label">Saved Monk Mode Script</div>
+              <div class="streak-identity-text" id="savedScriptText">
+No Monk Mode script saved yet. Your first check-in will lock it in.
+              </div>
+            </div>
+
+            <div class="streak-footer">
+              <span id="lastCheckInText">Last Check-In: —</span>
+              <span>Monk Mode is built one script at a time.</span>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-line">&gt; MODULE STATUS: LOCAL · MONK MODE</div>
+      <div class="footer-line">UPTIME: 00:00:01 · USER: YOU</div>
+      <div class="footer-line">© Discipline OS · Life Operating System</div>
+    </footer>
+  </div>
+
+  <script>
+    // =========================
+    // Local Monk Mode Storage
+    // =========================
+    const STORAGE_KEY = "disciplineos_monk_local_v1";
+
+    const monkInput = document.getElementById("monkInput");
+    const streakDayText = document.getElementById("streakDayText");
+    const savedScriptText = document.getElementById("savedScriptText");
+    const lastCheckInText = document.getElementById("lastCheckInText");
+    const messageEl = document.getElementById("message");
+
+    const checkInBtn = document.getElementById("checkInBtn");
+    const saveScriptBtn = document.getElementById("saveScriptBtn");
+    const resetStreakBtn = document.getElementById("resetStreakBtn");
+
+    const startingDayInput = document.getElementById("startingDayInput");
+    const setStartingDayBtn = document.getElementById("setStartingDayBtn");
+
+    const homeBtn = document.getElementById("homeBtn");
+
+    const normalize = (s) => (s ?? "").replace(/\r\n/g, "\n").trimEnd();
+
+    function nowKeyLocal() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    function nowTimeLocal() {
+      const d = new Date();
+      const hh = String(d.getHours()).padStart(2, "0");
+      const mm = String(d.getMinutes()).padStart(2, "0");
+      const ss = String(d.getSeconds()).padStart(2, "0");
+      return `${hh}:${mm}:${ss}`;
+    }
+
+    function prettyDate(dateKey) {
+      if (!dateKey) return "—";
+      const [y, m, d] = dateKey.split("-").map(Number);
+      const dt = new Date(y, (m || 1) - 1, d || 1);
+      return dt.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+    }
+
+    function showMessage(text, type) {
+      if (!messageEl) return;
+      messageEl.textContent = text;
+      messageEl.className = "message " + type;
+      messageEl.style.display = "block";
+      setTimeout(() => { messageEl.style.display = "none"; }, 5000);
+    }
+
+    function loadLocal() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw);
+      } catch {
+        return null;
+      }
+    }
+
+    function saveLocal(state) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function getState() {
+      return loadLocal() || {
+        protocol_rules: "",
+        starting_day: 0,
+        current_streak: 0,
+        last_checkin_date: null,
+        last_checkin_time: null
+      };
+    }
+
+    function render() {
+      const s = getState();
+
+      savedScriptText.textContent = s.protocol_rules
+        ? s.protocol_rules
+        : "No Monk Mode script saved yet. Your first check-in will lock it in.";
+
+      const base = Number(s.starting_day || 0);
+      const cur = Number(s.current_streak || 0);
+      streakDayText.textContent = `Day ${base + cur}`;
+
+      if (s.last_checkin_date) {
+        lastCheckInText.textContent = `Last Check-In: ${prettyDate(s.last_checkin_date)} · ${s.last_checkin_time || "--:--"}`;
+      } else {
+        lastCheckInText.textContent = "Last Check-In: —";
+      }
+
+      if (startingDayInput) {
+        startingDayInput.value = base ? String(base) : "";
+      }
+
+      // force re-type daily
+      monkInput.value = "";
+    }
+
+    // Optional "Home" click: go to local index if you have it
+    homeBtn?.addEventListener("click", () => {
+      // Change this if your local home file name is different
+      window.location.href = "index.html";
+    });
+
+    setStartingDayBtn?.addEventListener("click", () => {
+      const s = getState();
+      const val = parseInt(startingDayInput.value || "", 10);
+      if (Number.isNaN(val) || val < 0) return showMessage("Enter a valid starting day (0 or higher).", "error");
+
+      s.starting_day = val;
+      saveLocal(s);
+      render();
+      showMessage(`Starting day set. Your streak now displays from Day ${val}.`, "success");
+    });
+
+    saveScriptBtn?.addEventListener("click", () => {
+      const s = getState();
+      const raw = monkInput.value;
+
+      if (!raw.trim()) return showMessage("Type your Monk Mode script before saving.", "error");
+
+      const text = normalize(raw).slice(0, 8000);
+      s.protocol_rules = text;
+
+      // IMPORTANT: saving does NOT start streak
+      saveLocal(s);
+      render();
+      showMessage('Script saved. Now retype it exactly and press "Check In" to start Day 1.', "success");
+    });
+
+    checkInBtn?.addEventListener("click", () => {
+      const s = getState();
+      const raw = monkInput.value;
+
+      if (!raw.trim()) return showMessage("Type your full Monk Mode script before checking in.", "error");
+
+      const today = nowKeyLocal();
+      const time = nowTimeLocal();
+      const typed = normalize(raw).slice(0, 8000);
+
+      // If no script saved yet: first check-in locks it in + starts Day 1
+      if (!s.protocol_rules) {
+        s.protocol_rules = typed;
+        s.current_streak = 1;
+        s.last_checkin_date = today;
+        s.last_checkin_time = time;
+        saveLocal(s);
+        render();
+        return showMessage("Monk Mode script locked in. Day 1 has started.", "success");
+      }
+
+      // Already checked in today
+      if (s.last_checkin_date === today) {
+        s.last_checkin_time = time;
+        saveLocal(s);
+        render();
+        return showMessage("You already checked in today. Streak stays the same (time updated).", "success");
+      }
+
+      // Must match exactly (after normalization)
+      if (normalize(typed) !== normalize(s.protocol_rules)) {
+        return showMessage(
+          'This does not match your saved Monk Mode script. Re-type it exactly (line breaks/punctuation/spaces), or use "Save / Update Script" to change it.',
+          "error"
+        );
+      }
+
+      // New day success
+      s.current_streak = Number(s.current_streak || 0) + 1;
+      s.last_checkin_date = today;
+      s.last_checkin_time = time;
+
+      saveLocal(s);
+      render();
+      showMessage(`Check-in logged. Monk Mode Day ${Number(s.starting_day || 0) + Number(s.current_streak || 0)}.`, "success");
+    });
+
+    resetStreakBtn?.addEventListener("click", () => {
+      if (!confirm("Reset your Monk Mode streak back to Day 0? Your script will stay saved.")) return;
+
+      const s = getState();
+      s.current_streak = 0;
+      s.starting_day = 0;
+      s.last_checkin_date = null;
+      s.last_checkin_time = null;
+
+      saveLocal(s);
+      render();
+      showMessage("Monk Mode streak reset to Day 0. Script still saved. Rebuild from zero.", "success");
+    });
+
+    // Your focus auto-resize behavior (kept)
+    monkInput.addEventListener("focus", () => {
+      monkInput.style.height = "auto";
+      monkInput.style.height = monkInput.scrollHeight + "px";
+    });
+
+    // Init
+    render();
+  </script>
+</body>
+</html>
