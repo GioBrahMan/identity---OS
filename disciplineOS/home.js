@@ -32,7 +32,7 @@ function getBasePath() {
 }
 
 
-const APP_ROOT = `${getBasePath()}Home/`;
+const APP_ROOT = `${getBasePath()}disciplineOS/`;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
