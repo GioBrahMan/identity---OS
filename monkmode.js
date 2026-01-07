@@ -1,4 +1,5 @@
 // monkmode.js (Fix preview overlay + enforce script match + consistent messaging + AM/PM)
+// ✅ Uses monk_mode.protocol_rules (not identity_statement)
 import { supabase } from "./home.js";
 
 console.log("monkmode.js loaded");
@@ -31,7 +32,7 @@ function disableDemoMode() {
 // ===============================
 // UI ELEMENTS
 // ===============================
-const identityInput = document.getElementById("monkInput");
+const monkInput = document.getElementById("monkInput");
 
 const streakDayText = document.getElementById("streakDayText");
 const savedScriptText = document.getElementById("savedScriptText");
@@ -49,7 +50,7 @@ const btnLogout = document.getElementById("btnLogout");
 // CONSTANTS
 // ===============================
 const TABLE = "monk_mode";
-const MAX_IDENTITY_LEN = 2000;
+const MAX_RULES_LEN = 2000;
 const RATE_LIMIT_MS = 900;
 
 // ===============================
@@ -103,7 +104,7 @@ function setButtonsDisabled(disabled) {
   checkInBtn && (checkInBtn.disabled = ds);
   saveScriptBtn && (saveScriptBtn.disabled = ds);
   resetStreakBtn && (resetStreakBtn.disabled = ds);
-  identityInput && (identityInput.disabled = ds);
+  monkInput && (monkInput.disabled = ds);
 }
 
 // ===============================
@@ -118,12 +119,13 @@ function normalize(s) {
 
 function sanitizeForStorage(s) {
   let out = normalize(s);
+  // remove control chars but KEEP \n and \t
   out = out.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "");
-  if (out.length > MAX_IDENTITY_LEN) out = out.slice(0, MAX_IDENTITY_LEN);
+  if (out.length > MAX_RULES_LEN) out = out.slice(0, MAX_RULES_LEN);
   return out;
 }
 
-// Make comparison strict but resilient to Windows newlines / trailing spaces
+// strict but resilient to Windows newlines / trailing spaces
 function normalizeForCompare(s) {
   return normalize(s).trim();
 }
@@ -181,17 +183,14 @@ async function guarded(_name, fn) {
 async function loadState() {
   const { data, error } = await supabase
     .from(TABLE)
-    .select("identity_statement,current_streak,last_checkin_date,last_checkin_time")
+    .select("protocol_rules,current_streak,starting_day,last_checkin_date,last_checkin_time")
     .eq("user_id", currentUserId)
     .maybeSingle();
 
-    if (error) {
+  if (error) {
     console.error(error);
     showMessage("Could not load your data.", "error");
-    revealLoadedUI();
-    return;
   }
-
 
   if (!data) {
     streakDayText && (streakDayText.textContent = "Day 0");
@@ -205,11 +204,12 @@ async function loadState() {
 
   savedScriptText &&
     (savedScriptText.textContent =
-      data.identity_statement ||
+      data.protocol_rules ||
       "No Monk Mode script saved yet. Your first check-in will lock it in.");
 
+  const base = data.starting_day || 0;
   const streak = data.current_streak || 0;
-  streakDayText && (streakDayText.textContent = `Day ${streak}`);
+  streakDayText && (streakDayText.textContent = `Day ${base + streak}`);
 
   if (data.last_checkin_date) {
     lastCheckInText &&
@@ -228,7 +228,7 @@ async function loadState() {
 // ===============================
 checkInBtn?.addEventListener("click", () =>
   guarded("checkIn", async () => {
-    const input = sanitizeForStorage(identityInput?.value);
+    const input = sanitizeForStorage(monkInput?.value);
     if (!input.trim()) {
       showMessage("Type your Monk Mode script first.", "error");
       return;
@@ -239,7 +239,7 @@ checkInBtn?.addEventListener("click", () =>
 
     const { data, error: readErr } = await supabase
       .from(TABLE)
-      .select("identity_statement,current_streak,last_checkin_date,last_checkin_time")
+      .select("protocol_rules,current_streak,starting_day,last_checkin_date,last_checkin_time")
       .eq("user_id", currentUserId)
       .maybeSingle();
 
@@ -249,12 +249,13 @@ checkInBtn?.addEventListener("click", () =>
       return;
     }
 
-    // First ever check-in: lock script in + start streak
+    // First ever check-in: lock rules + start streak
     if (!data) {
       const { error: insErr } = await supabase.from(TABLE).insert({
         user_id: currentUserId,
-        identity_statement: input,
+        protocol_rules: input,
         current_streak: 1,
+        starting_day: 0,
         last_checkin_date: today,
         last_checkin_time: now,
       });
@@ -270,14 +271,16 @@ checkInBtn?.addEventListener("click", () =>
       return;
     }
 
-    // Already checked in today
     if (data.last_checkin_date === today) {
-      showMessage(`Already checked in today — ${formatTimeAmPm(data.last_checkin_time)}`, "success");
+      showMessage(
+        `Already checked in today — ${formatTimeAmPm(data.last_checkin_time)}`,
+        "success"
+      );
       return;
     }
 
-    // Enforce exact script match (after it has been locked in)
-    const saved = normalizeForCompare(data.identity_statement || "");
+    // Enforce exact rules match (after locked)
+    const saved = normalizeForCompare(data.protocol_rules || "");
     const typed = normalizeForCompare(input);
 
     if (saved && typed !== saved) {
@@ -307,7 +310,7 @@ checkInBtn?.addEventListener("click", () =>
 
 saveScriptBtn?.addEventListener("click", () =>
   guarded("saveScript", async () => {
-    const script = sanitizeForStorage(identityInput?.value);
+    const script = sanitizeForStorage(monkInput?.value);
     if (!script.trim()) {
       showMessage("Type your Monk Mode script first.", "error");
       return;
@@ -315,7 +318,7 @@ saveScriptBtn?.addEventListener("click", () =>
 
     const { error } = await supabase.from(TABLE).upsert({
       user_id: currentUserId,
-      identity_statement: script,
+      protocol_rules: script,
     });
 
     if (error) {
@@ -338,6 +341,7 @@ resetStreakBtn?.addEventListener("click", () =>
       .from(TABLE)
       .update({
         current_streak: 0,
+        starting_day: 0,
         last_checkin_date: null,
         last_checkin_time: null,
       })
@@ -390,7 +394,7 @@ async function init() {
   CAN_INTERACT = true;
   currentUserId = user.id;
 
-  disableDemoMode(); // ✅ IMPORTANT: hide overlay for real users
+  disableDemoMode();
   await loadState();
 
   setButtonsDisabled(false);
