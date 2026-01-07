@@ -224,3 +224,39 @@ button:disabled{ opacity:0.55; cursor:not-allowed; transform:none !important; }
 .title-sm { font-size: 18px; margin-bottom: 6px; }
 .sub-gap { margin-bottom: 12px; }
 .sub-after-cta { margin-top: 10px; margin-bottom: 0; }
+
+
+/* ===============================
+   Checkout / Unlock Access button
+   (match Monk Mode preview styling)
+   =============================== */
+
+a.btn-primary[href*="stripe.com"]{
+  color: var(--ink);
+  border: 1px solid rgba(255,255,255,0.18);
+  background:
+    radial-gradient(circle at 0 0, rgba(255,255,255,0.10), transparent 60%),
+    linear-gradient(180deg, rgba(10,11,14,0.92), rgba(0,0,0,0.96));
+  box-shadow: 0 18px 60px rgba(0,0,0,0.90);
+}
+
+a.btn-primary[href*="stripe.com"]::after{
+  content:"";
+  position:absolute;
+  inset:-40%;
+  background:linear-gradient(120deg, rgba(255,255,255,0.18), transparent 55%);
+  opacity:0;
+  transform:translateX(-40%);
+  transition:opacity 0.25s ease-out, transform 0.45s ease-out;
+}
+
+a.btn-primary[href*="stripe.com"]:hover::after{
+  opacity:1;
+  transform:translateX(0%);
+}
+
+a.btn-primary[href*="stripe.com"]:hover{
+  transform:translateY(-1px);
+  border-color: rgba(255,255,255,0.30);
+  box-shadow: 0 22px 70px rgba(0,0,0,0.92);
+}
