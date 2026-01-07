@@ -11,17 +11,25 @@ let CAN_INTERACT = false;
 function enableDemoMode() {
   const demoGate = document.getElementById("demoGate");
   const appShell = document.getElementById("appShell");
+  const authGuard = document.getElementById("authGuard");
 
-  // show overlay
+  // Ensure main UI is visible
+  appShell?.classList.remove("is-hidden");
+
+  // Lock interaction
+  appShell?.classList.add("demo-locked");
+
+  // Hide auth guard (IMPORTANT)
+  authGuard?.classList.add("is-hidden");
+
+  // Show preview overlay
   demoGate?.classList.remove("is-hidden");
   demoGate?.classList.add("is-on");
 
-  // show UI behind overlay + lock it
-  appShell?.classList.remove("is-hidden"); // ✅ THIS is what makes it match Monk Mode screenshot
-  appShell?.classList.add("demo-locked");
-
   CAN_INTERACT = false;
 }
+
+
 
 // ===============================
 // UI ELEMENTS

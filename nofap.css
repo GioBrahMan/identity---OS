@@ -465,17 +465,22 @@ section{ padding:36px 0; border-top:1px solid rgba(255,255,255,0.04); }
 }
 .footer-line{ white-space:nowrap; }
 
-/* Overlay guard/loading */
-.overlay{
+.overlay {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  display: none;
+
+  display: flex;               /* 👈 always flex */
   align-items: center;
   justify-content: center;
   padding: 22px;
+
   background: rgba(5,6,8,0.92);
   backdrop-filter: blur(10px);
+
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
 }
 
 .guard-card{
@@ -530,11 +535,18 @@ section{ padding:36px 0; border-top:1px solid rgba(255,255,255,0.04); }
 }
 
 
-/* Allow JS to turn overlays on without inline styles */
-.overlay.is-on{
-  display:flex;
+/* Hidden state */
+.overlay.is-hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
+
+/* Visible state */
+.overlay.is-on {
+  opacity: 1;
+  pointer-events: auto;
+}
 
 /* ACTIVE NAV LINK (current module) */
 .nav-right a.is-active,
