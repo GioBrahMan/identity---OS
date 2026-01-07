@@ -600,3 +600,74 @@ section{
 .demo-locked button {
   pointer-events: none !important;
 }
+
+
+/* ===============================
+   Preview Banner (matches NoFap)
+   =============================== */
+.is-hidden { display: none !important; }
+
+/* Banner container */
+.overlay{
+  position: relative;
+  z-index: 20;
+  display: block;
+  width: 100%;
+
+  /* align with .page */
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 24px 20px 0;
+
+  background: transparent;
+  backdrop-filter: none;
+
+  opacity: 1;
+  pointer-events: auto;
+  transition: none;
+}
+
+.overlay.is-hidden {
+  display: none !important;
+}
+
+.overlay.is-on {
+  display: block;
+}
+
+.guard-card{
+  width: min(520px, 100%);
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: linear-gradient(180deg, rgba(0,0,0,0.88), rgba(0,0,0,0.96));
+  box-shadow: var(--shadow-card);
+  padding: 18px;
+}
+
+.guard-kicker{
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:0.26em;
+  color:var(--muted);
+  margin-bottom:10px;
+}
+
+.guard-title{
+  font-size:18px;
+  margin: 0 0 10px;
+  letter-spacing:0.02em;
+}
+
+.guard-sub{
+  font-size:13px;
+  color:var(--muted);
+  line-height:1.8;
+  margin: 0 0 14px;
+}
+
+.guard-sub--fineprint{
+  margin-top:12px;
+  font-size:11px;
+}
+
+
