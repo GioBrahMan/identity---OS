@@ -465,22 +465,24 @@ section{ padding:36px 0; border-top:1px solid rgba(255,255,255,0.04); }
 }
 .footer-line{ white-space:nowrap; }
 
-.overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
+/* Banner container */
+.overlay{
+  position: relative;
+  z-index: 20;
+  display: block;
+  width: 100%;
 
-  display: flex;               /* 👈 always flex */
-  align-items: center;
-  justify-content: center;
-  padding: 22px;
+  /* align with .page */
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 24px 20px 0;
 
-  background: rgba(5,6,8,0.92);
-  backdrop-filter: blur(10px);
+  background: transparent;
+  backdrop-filter: none;
 
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.25s ease;
+  opacity: 1;
+  pointer-events: auto;
+  transition: none;
 }
 
 .guard-card{
@@ -537,15 +539,13 @@ section{ padding:36px 0; border-top:1px solid rgba(255,255,255,0.04); }
 
 /* Hidden state */
 .overlay.is-hidden {
-  opacity: 0;
-  pointer-events: none;
+  display: none !important;
 }
 
 
 /* Visible state */
 .overlay.is-on {
-  opacity: 1;
-  pointer-events: auto;
+  display: block;
 }
 
 /* ACTIVE NAV LINK (current module) */
