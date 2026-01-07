@@ -185,10 +185,13 @@ async function loadState() {
     .eq("user_id", currentUserId)
     .maybeSingle();
 
-  if (error) {
+    if (error) {
     console.error(error);
     showMessage("Could not load your data.", "error");
+    revealLoadedUI();
+    return;
   }
+
 
   if (!data) {
     streakDayText && (streakDayText.textContent = "Day 0");
