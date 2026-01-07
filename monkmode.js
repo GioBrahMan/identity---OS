@@ -1,4 +1,4 @@
-// Home/monkmode.js (Consistent messaging + "already checked in" + AM/PM)
+// monkmode.js (Consistent messaging + "already checked in" + AM/PM + script must match)
 import { supabase } from "./home.js";
 
 console.log("monkmode.js loaded");
@@ -29,11 +29,12 @@ const lastCheckInText = document.getElementById("lastCheckInText");
 const messageEl = document.getElementById("message");
 
 const checkInBtn = document.getElementById("checkInBtn");
-const saveIdentityBtn = document.getElementById("saveScriptBtn");
+const saveScriptBtn = document.getElementById("saveScriptBtn");
 const resetStreakBtn = document.getElementById("resetStreakBtn");
 
-
-
+// optional (safe if not in HTML)
+const startingDayInput = document.getElementById("startingDayInput");
+const setStartingDayBtn = document.getElementById("setStartingDayBtn");
 
 const appShell = document.getElementById("appShell");
 const btnLogout = document.getElementById("btnLogout");
@@ -95,18 +96,24 @@ function clearMessage() {
 function setButtonsDisabled(disabled) {
   const ds = !!disabled;
   checkInBtn && (checkInBtn.disabled = ds);
-  saveIdentityBtn && (saveIdentityBtn.disabled = ds);
+  saveScriptBtn && (saveScriptBtn.disabled = ds);
   resetStreakBtn && (resetStreakBtn.disabled = ds);
+
+  // safe even if these don’t exist in HTML
   setStartingDayBtn && (setStartingDayBtn.disabled = ds);
-  identityInput && (identityInput.disabled = ds);
   startingDayInput && (startingDayInput.disabled = ds);
+
+  identityInput && (identityInput.disabled = ds);
 }
 
 // ===============================
 // HELPERS
 // ===============================
 function normalize(s) {
-  return String(s ?? "").replace(/\r\n/g, "\n").normalize("NFKC").trimEnd();
+  return String(s ?? "")
+    .replace(/\r\n/g, "\n")
+    .normalize("NFKC")
+    .trim();
 }
 
 function sanitizeForStorage(s) {
@@ -169,7 +176,6 @@ async function guarded(_name, fn) {
   }
 }
 
-
 // ===============================
 // DATA LOAD
 // ===============================
@@ -222,8 +228,8 @@ async function loadState() {
 // ===============================
 checkInBtn?.addEventListener("click", () =>
   guarded("checkIn", async () => {
-    const input = sanitizeForStorage(identityInput?.value);
-    if (!input.trim()) {
+    const typed = sanitizeForStorage(identityInput?.value);
+    if (!typed.trim()) {
       showMessage("Type your Monk Mode script first.", "error");
       return;
     }
@@ -243,27 +249,43 @@ checkInBtn?.addEventListener("click", () =>
       return;
     }
 
+    // first time: create row and lock script
     if (!data) {
       const { error: insErr } = await supabase.from(TABLE).insert({
         user_id: currentUserId,
-        identity_statement: input,
+        identity_statement: typed,
         current_streak: 1,
         starting_day: 0,
         last_checkin_date: today,
         last_checkin_time: now,
       });
+
       if (insErr) {
         console.error(insErr);
         showMessage("Check-in failed.", "error");
         return;
       }
+
       showMessage(`✅ Checked in — ${formatTimeAmPm(now)}`, "success");
       await loadState();
       return;
     }
 
+    // already checked in today
     if (data.last_checkin_date === today) {
       showMessage(`Already checked in today — ${formatTimeAmPm(data.last_checkin_time)}`, "success");
+      return;
+    }
+
+    // enforce exact script match
+    const saved = normalize(data.identity_statement || "");
+    const nowTyped = normalize(typed);
+    if (saved && nowTyped !== saved) {
+      showMessage(
+        "Script mismatch. To change your rules, click “Save / Update Script” first (streak stays).",
+        "error",
+        6500
+      );
       return;
     }
 
@@ -287,7 +309,7 @@ checkInBtn?.addEventListener("click", () =>
   })
 );
 
-saveIdentityBtn?.addEventListener("click", () =>
+saveScriptBtn?.addEventListener("click", () =>
   guarded("saveScript", async () => {
     const script = sanitizeForStorage(identityInput?.value);
     if (!script.trim()) {
@@ -337,6 +359,7 @@ resetStreakBtn?.addEventListener("click", () =>
   })
 );
 
+// Optional: starting day (only if your HTML has it)
 setStartingDayBtn?.addEventListener("click", () =>
   guarded("setStartingDay", async () => {
     const val = clampInt(startingDayInput?.value, 0, MAX_STARTING_DAY);
@@ -384,7 +407,7 @@ async function init() {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (subErr) console.error(subErr);
+  if (subErr) console.error("user_subscriptions select error:", subErr);
 
   if (!sub?.is_active) {
     enableDemoMode();
