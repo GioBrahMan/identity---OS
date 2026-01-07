@@ -22,20 +22,18 @@ function enableDemoMode() {
 // ===============================
 // UI ELEMENTS
 // ===============================
-const identityInput = document.getElementById("identityInput");
+const identityInput = document.getElementById("monkInput");
 const streakDayText = document.getElementById("streakDayText");
-const savedIdentityText = document.getElementById("savedIdentityText");
+const savedScriptText = document.getElementById("savedScriptText");
 const lastCheckInText = document.getElementById("lastCheckInText");
 const messageEl = document.getElementById("message");
 
 const checkInBtn = document.getElementById("checkInBtn");
-const saveIdentityBtn = document.getElementById("saveIdentityBtn");
+const saveIdentityBtn = document.getElementById("saveScriptBtn");
 const resetStreakBtn = document.getElementById("resetStreakBtn");
 
-const startingDayInput = document.getElementById("startingDayInput");
-const setStartingDayBtn = document.getElementById("setStartingDayBtn");
 
-const charCountEl = document.getElementById("charCount");
+
 
 const appShell = document.getElementById("appShell");
 const btnLogout = document.getElementById("btnLogout");
@@ -64,7 +62,7 @@ function showEl(el) {
 }
 
 function revealLoadedUI() {
-  savedIdentityText?.classList.remove("is-loading");
+  savedScriptText?.classList.remove("is-loading");
   streakDayText?.classList.remove("is-loading");
   lastCheckInText?.classList.remove("is-loading");
 }
@@ -171,15 +169,6 @@ async function guarded(_name, fn) {
   }
 }
 
-// ===============================
-// UI: CHAR COUNT
-// ===============================
-function updateCharCount() {
-  if (!charCountEl || !identityInput) return;
-  const len = (identityInput.value || "").length;
-  charCountEl.textContent = `${len}/${MAX_IDENTITY_LEN}`;
-}
-identityInput?.addEventListener("input", updateCharCount);
 
 // ===============================
 // DATA LOAD
@@ -198,22 +187,21 @@ async function loadState() {
 
   if (!data) {
     streakDayText && (streakDayText.textContent = "Day 0");
-    savedIdentityText &&
-      (savedIdentityText.textContent =
-        "No script saved yet. Your first check-in will lock it in.");
+    savedScriptText &&
+      (savedScriptText.textContent =
+        "No Monk Mode script saved yet. Your first check-in will lock it in.");
     lastCheckInText && (lastCheckInText.textContent = "Last Check-In: —");
     revealLoadedUI();
-    updateCharCount();
     return;
   }
 
   const base = data.starting_day || 0;
   const streak = data.current_streak || 0;
 
-  savedIdentityText &&
-    (savedIdentityText.textContent =
+  savedScriptText &&
+    (savedScriptText.textContent =
       data.identity_statement ||
-      "No script saved yet. Your first check-in will lock it in.");
+      "No Monk Mode script saved yet. Your first check-in will lock it in.");
 
   streakDayText && (streakDayText.textContent = `Day ${base + streak}`);
 
@@ -227,7 +215,6 @@ async function loadState() {
   }
 
   revealLoadedUI();
-  updateCharCount();
 }
 
 // ===============================
@@ -388,7 +375,6 @@ async function init() {
     enableDemoMode();
     revealLoadedUI();
     showEl(appShell);
-    updateCharCount();
     return;
   }
 
@@ -404,7 +390,6 @@ async function init() {
     enableDemoMode();
     revealLoadedUI();
     showEl(appShell);
-    updateCharCount();
     return;
   }
 
@@ -414,7 +399,6 @@ async function init() {
   await loadState();
   setButtonsDisabled(false);
   showEl(appShell);
-  updateCharCount();
 }
 
 init();
