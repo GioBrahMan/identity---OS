@@ -1,4 +1,4 @@
-// Home/nofap.js (MonkMode-style reveal logic; AM/PM display)
+// Home/nofap.js (Preview Mode + AM/PM display)
 import { supabase } from "./home.js";
 
 console.log("nofap.js loaded");
@@ -12,8 +12,12 @@ function enableDemoMode() {
   const demoGate = document.getElementById("demoGate");
   const appShell = document.getElementById("appShell");
 
+  // show overlay
   demoGate?.classList.remove("is-hidden");
   demoGate?.classList.add("is-on");
+
+  // show UI behind overlay + lock it
+  appShell?.classList.remove("is-hidden"); // ✅ THIS is what makes it match Monk Mode screenshot
   appShell?.classList.add("demo-locked");
 
   CAN_INTERACT = false;
@@ -35,8 +39,6 @@ const resetStreakBtn = document.getElementById("resetStreakBtn");
 const startingDayInput = document.getElementById("startingDayInput");
 const setStartingDayBtn = document.getElementById("setStartingDayBtn");
 
-const charCountEl = document.getElementById("charCount");
-
 const appShell = document.getElementById("appShell");
 const btnLogout = document.getElementById("btnLogout");
 
@@ -44,7 +46,6 @@ const btnLogout = document.getElementById("btnLogout");
 // CONSTANTS / LIMITS
 // ===============================
 const MAX_IDENTITY_LEN = 2000;
-const MAX_STARTING_DAY = 5000;
 const RATE_LIMIT_MS = 900;
 
 // ===============================
@@ -110,13 +111,12 @@ function normalize(s) {
 
 function sanitizeForStorage(s) {
   let out = normalize(s);
+
+  // remove control chars but keep newlines already normalized
   out = out.replace(/[\u0000-\u001F]/g, "");
+
   if (out.length > MAX_IDENTITY_LEN) out = out.slice(0, MAX_IDENTITY_LEN);
   return out;
-}
-
-function isUUID(v) {
-  return /^[0-9a-f-]{36}$/i.test(v ?? "");
 }
 
 function getTodayKey() {
@@ -133,13 +133,15 @@ function formatTimeAmPm(t) {
   const [h, m, s] = t.split(":").map(Number);
   const ampm = h >= 12 ? "PM" : "AM";
   const hh = ((h + 11) % 12) + 1;
-  return s ? `${hh}:${m.toString().padStart(2, "0")}:${s} ${ampm}` : `${hh}:${m} ${ampm}`;
+  return s
+    ? `${hh}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")} ${ampm}`
+    : `${hh}:${String(m).padStart(2, "0")} ${ampm}`;
 }
 
 // ===============================
 // GUARD
 // ===============================
-async function guarded(name, fn) {
+async function guarded(_name, fn) {
   if (!CAN_INTERACT) return;
 
   const now = Date.now();
@@ -180,6 +182,8 @@ async function loadState() {
 
   if (data.last_checkin_date) {
     lastCheckInText.textContent = `Last Check-In: ${data.last_checkin_date} · ${formatTimeAmPm(data.last_checkin_time)}`;
+  } else {
+    lastCheckInText.textContent = "Last Check-In: —";
   }
 
   revealLoadedUI();
@@ -191,7 +195,7 @@ async function loadState() {
 checkInBtn?.addEventListener("click", () =>
   guarded("checkIn", async () => {
     const input = sanitizeForStorage(identityInput.value);
-    if (!input) return;
+    if (!input.trim()) return;
 
     const today = getTodayKey();
     const now = getTimeString();
@@ -217,7 +221,7 @@ checkInBtn?.addEventListener("click", () =>
       await supabase
         .from("nofap_streaks")
         .update({
-          current_streak: data.current_streak + 1,
+          current_streak: (data.current_streak || 0) + 1,
           last_checkin_date: today,
           last_checkin_time: now,
         })
@@ -234,6 +238,15 @@ checkInBtn?.addEventListener("click", () =>
 async function init() {
   setButtonsDisabled(true);
   clearMessage();
+
+  // If you have logout button on this page, wire it
+  btnLogout?.addEventListener("click", async () => {
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      window.location.href = "LoginPage.html";
+    }
+  });
 
   const { data } = await supabase.auth.getSession();
   const user = data?.session?.user;
