@@ -589,3 +589,5 @@ section{ padding:36px 0; border-top:1px solid rgba(255,255,255,0.04); }
   pointer-events: none !important;
 }
 
+
+.message.is-hidden{ display:none; }

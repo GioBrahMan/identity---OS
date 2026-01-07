@@ -1,4 +1,4 @@
-// Home/nofap.js (MonkMode-style template; demo-safe; AM/PM display)
+// Home/nofap.js (Consistent messaging + "already checked in" + AM/PM)
 import { supabase } from "./home.js";
 
 console.log("nofap.js loaded");
@@ -70,9 +70,9 @@ function revealLoadedUI() {
 }
 
 // ===============================
-// MESSAGE
+// MESSAGE (consistent across modules)
 // ===============================
-function showMessage(text, type = "success") {
+function showMessage(text, type = "success", ms = 4500) {
   if (!messageEl) return;
 
   messageEl.textContent = String(text || "");
@@ -81,8 +81,10 @@ function showMessage(text, type = "success") {
 
   clearTimeout(showMessage._t);
   showMessage._t = setTimeout(() => {
+    messageEl.textContent = "";
     messageEl.classList.add("is-hidden");
-  }, 5000);
+    messageEl.classList.remove("success", "error");
+  }, ms);
 }
 
 function clearMessage() {
@@ -133,7 +135,8 @@ function getTimeString() {
 
 function formatTimeAmPm(t) {
   if (!t) return "—";
-  const [h, m, s] = t.split(":").map(Number);
+  const [h, m, s] = String(t).split(":").map(Number);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return "—";
   const ampm = h >= 12 ? "PM" : "AM";
   const hh = ((h + 11) % 12) + 1;
   const mm = String(m).padStart(2, "0");
@@ -145,7 +148,10 @@ function formatTimeAmPm(t) {
 // GUARD
 // ===============================
 async function guarded(_name, fn) {
-  if (!CAN_INTERACT) return;
+  if (!CAN_INTERACT) {
+    showMessage("Demo mode is locked. Subscribe to enable actions.", "error");
+    return;
+  }
 
   const now = Date.now();
   if (now - lastActionAt < RATE_LIMIT_MS) return;
@@ -157,7 +163,8 @@ async function guarded(_name, fn) {
 
   try {
     await fn();
-  } catch {
+  } catch (e) {
+    console.error(e);
     showMessage("Operation failed. Please try again.", "error");
   } finally {
     isProcessing = false;
@@ -179,11 +186,16 @@ identityInput?.addEventListener("input", updateCharCount);
 // DATA LOAD
 // ===============================
 async function loadState() {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from(TABLE)
     .select("*")
     .eq("user_id", currentUserId)
     .maybeSingle();
+
+  if (error) {
+    console.error(error);
+    showMessage("Could not load your data.", "error");
+  }
 
   if (!data) {
     streakDayText && (streakDayText.textContent = "Day 0");
@@ -225,19 +237,28 @@ async function loadState() {
 checkInBtn?.addEventListener("click", () =>
   guarded("checkIn", async () => {
     const input = sanitizeForStorage(identityInput?.value);
-    if (!input.trim()) return;
+    if (!input.trim()) {
+      showMessage("Type your identity statement first.", "error");
+      return;
+    }
 
     const today = getTodayKey();
     const now = getTimeString();
 
-    const { data } = await supabase
+    const { data, error: readErr } = await supabase
       .from(TABLE)
       .select("*")
       .eq("user_id", currentUserId)
       .maybeSingle();
 
+    if (readErr) {
+      console.error(readErr);
+      showMessage("Could not read streak status.", "error");
+      return;
+    }
+
     if (!data) {
-      await supabase.from(TABLE).insert({
+      const { error: insErr } = await supabase.from(TABLE).insert({
         user_id: currentUserId,
         identity_statement: input,
         current_streak: 1,
@@ -245,19 +266,37 @@ checkInBtn?.addEventListener("click", () =>
         last_checkin_date: today,
         last_checkin_time: now,
       });
-    } else {
-      if (data.last_checkin_date === today) return;
-
-      await supabase
-        .from(TABLE)
-        .update({
-          current_streak: (data.current_streak || 0) + 1,
-          last_checkin_date: today,
-          last_checkin_time: now,
-        })
-        .eq("user_id", currentUserId);
+      if (insErr) {
+        console.error(insErr);
+        showMessage("Check-in failed.", "error");
+        return;
+      }
+      showMessage(`✅ Checked in — ${formatTimeAmPm(now)}`, "success");
+      await loadState();
+      return;
     }
 
+    if (data.last_checkin_date === today) {
+      showMessage(`Already checked in today — ${formatTimeAmPm(data.last_checkin_time)}`, "success");
+      return;
+    }
+
+    const { error: upErr } = await supabase
+      .from(TABLE)
+      .update({
+        current_streak: (data.current_streak || 0) + 1,
+        last_checkin_date: today,
+        last_checkin_time: now,
+      })
+      .eq("user_id", currentUserId);
+
+    if (upErr) {
+      console.error(upErr);
+      showMessage("Check-in failed.", "error");
+      return;
+    }
+
+    showMessage(`✅ Checked in — ${formatTimeAmPm(now)}`, "success");
     await loadState();
   })
 );
@@ -265,22 +304,33 @@ checkInBtn?.addEventListener("click", () =>
 saveIdentityBtn?.addEventListener("click", () =>
   guarded("saveIdentity", async () => {
     const identity = sanitizeForStorage(identityInput?.value);
-    if (!identity.trim()) return;
+    if (!identity.trim()) {
+      showMessage("Type your identity statement first.", "error");
+      return;
+    }
 
-    await supabase.from(TABLE).upsert({
+    const { error } = await supabase.from(TABLE).upsert({
       user_id: currentUserId,
       identity_statement: identity,
     });
 
+    if (error) {
+      console.error(error);
+      showMessage("Save failed.", "error");
+      return;
+    }
+
+    showMessage("✅ Saved.", "success");
     await loadState();
   })
 );
 
 resetStreakBtn?.addEventListener("click", () =>
   guarded("reset", async () => {
-    if (!confirm("Reset your NoFap + NoCorn streak back to Day 0?")) return;
+    const ok = confirm("Reset your NoFap + NoCorn streak back to Day 0?");
+    if (!ok) return;
 
-    await supabase
+    const { error } = await supabase
       .from(TABLE)
       .update({
         current_streak: 0,
@@ -290,6 +340,13 @@ resetStreakBtn?.addEventListener("click", () =>
       })
       .eq("user_id", currentUserId);
 
+    if (error) {
+      console.error(error);
+      showMessage("Reset failed.", "error");
+      return;
+    }
+
+    showMessage("✅ Reset to Day 0.", "success");
     await loadState();
   })
 );
@@ -297,19 +354,29 @@ resetStreakBtn?.addEventListener("click", () =>
 setStartingDayBtn?.addEventListener("click", () =>
   guarded("setStartingDay", async () => {
     const val = clampInt(startingDayInput?.value, 0, MAX_STARTING_DAY);
-    if (val === null) return;
+    if (val === null) {
+      showMessage("Enter a valid starting day.", "error");
+      return;
+    }
 
-    await supabase.from(TABLE).upsert({
+    const { error } = await supabase.from(TABLE).upsert({
       user_id: currentUserId,
       starting_day: val,
     });
 
+    if (error) {
+      console.error(error);
+      showMessage("Could not set starting day.", "error");
+      return;
+    }
+
+    showMessage(`✅ Starting day set to ${val}.`, "success");
     await loadState();
   })
 );
 
 // ===============================
-// INIT (MonkMode-style)
+// INIT
 // ===============================
 async function init() {
   setButtonsDisabled(true);
@@ -326,11 +393,13 @@ async function init() {
     return;
   }
 
-  const { data: sub } = await supabase
+  const { data: sub, error: subErr } = await supabase
     .from("user_subscriptions")
     .select("is_active")
     .eq("user_id", user.id)
     .maybeSingle();
+
+  if (subErr) console.error(subErr);
 
   if (!sub?.is_active) {
     enableDemoMode();
@@ -352,7 +421,7 @@ async function init() {
 init();
 
 // ===============================
-// LOGOUT (MonkMode-style)
+// LOGOUT
 // ===============================
 btnLogout?.addEventListener("click", async () => {
   try {
