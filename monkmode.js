@@ -1,4 +1,4 @@
-// monkmode.js (Consistent messaging + "already checked in" + AM/PM + script must match)
+// monkmode.js (Fix preview overlay + enforce script match + consistent messaging + AM/PM)
 import { supabase } from "./home.js";
 
 console.log("monkmode.js loaded");
@@ -19,10 +19,20 @@ function enableDemoMode() {
   CAN_INTERACT = false;
 }
 
+function disableDemoMode() {
+  const demoGate = document.getElementById("demoGate");
+  const appShell = document.getElementById("appShell");
+
+  demoGate?.classList.add("is-hidden");
+  demoGate?.classList.remove("is-on");
+  appShell?.classList.remove("demo-locked");
+}
+
 // ===============================
 // UI ELEMENTS
 // ===============================
 const identityInput = document.getElementById("monkInput");
+
 const streakDayText = document.getElementById("streakDayText");
 const savedScriptText = document.getElementById("savedScriptText");
 const lastCheckInText = document.getElementById("lastCheckInText");
@@ -32,19 +42,14 @@ const checkInBtn = document.getElementById("checkInBtn");
 const saveScriptBtn = document.getElementById("saveScriptBtn");
 const resetStreakBtn = document.getElementById("resetStreakBtn");
 
-// optional (safe if not in HTML)
-const startingDayInput = document.getElementById("startingDayInput");
-const setStartingDayBtn = document.getElementById("setStartingDayBtn");
-
 const appShell = document.getElementById("appShell");
 const btnLogout = document.getElementById("btnLogout");
 
 // ===============================
-// CONSTANTS / LIMITS
+// CONSTANTS
 // ===============================
 const TABLE = "monk_mode";
 const MAX_IDENTITY_LEN = 2000;
-const MAX_STARTING_DAY = 5000;
 const RATE_LIMIT_MS = 900;
 
 // ===============================
@@ -98,11 +103,6 @@ function setButtonsDisabled(disabled) {
   checkInBtn && (checkInBtn.disabled = ds);
   saveScriptBtn && (saveScriptBtn.disabled = ds);
   resetStreakBtn && (resetStreakBtn.disabled = ds);
-
-  // safe even if these don’t exist in HTML
-  setStartingDayBtn && (setStartingDayBtn.disabled = ds);
-  startingDayInput && (startingDayInput.disabled = ds);
-
   identityInput && (identityInput.disabled = ds);
 }
 
@@ -113,7 +113,7 @@ function normalize(s) {
   return String(s ?? "")
     .replace(/\r\n/g, "\n")
     .normalize("NFKC")
-    .trim();
+    .trimEnd();
 }
 
 function sanitizeForStorage(s) {
@@ -123,10 +123,9 @@ function sanitizeForStorage(s) {
   return out;
 }
 
-function clampInt(n, min, max) {
-  const x = Number.parseInt(String(n), 10);
-  if (Number.isNaN(x)) return null;
-  return Math.min(max, Math.max(min, x));
+// Make comparison strict but resilient to Windows newlines / trailing spaces
+function normalizeForCompare(s) {
+  return normalize(s).trim();
 }
 
 function getTodayKey() {
@@ -144,8 +143,8 @@ function formatTimeAmPm(t) {
   const ampm = h >= 12 ? "PM" : "AM";
   const hh = ((h + 11) % 12) + 1;
   const mm = String(m).padStart(2, "0");
-  const ss = Number.isFinite(s) ? String(s).padStart(2, "0") : null;
-  return ss ? `${hh}:${mm}:${ss} ${ampm}` : `${hh}:${mm} ${ampm}`;
+  const ss2 = Number.isFinite(s) ? String(s).padStart(2, "0") : null;
+  return ss2 ? `${hh}:${mm}:${ss2} ${ampm}` : `${hh}:${mm} ${ampm}`;
 }
 
 // ===============================
@@ -182,7 +181,7 @@ async function guarded(_name, fn) {
 async function loadState() {
   const { data, error } = await supabase
     .from(TABLE)
-    .select("*")
+    .select("identity_statement,current_streak,last_checkin_date,last_checkin_time")
     .eq("user_id", currentUserId)
     .maybeSingle();
 
@@ -201,15 +200,13 @@ async function loadState() {
     return;
   }
 
-  const base = data.starting_day || 0;
-  const streak = data.current_streak || 0;
-
   savedScriptText &&
     (savedScriptText.textContent =
       data.identity_statement ||
       "No Monk Mode script saved yet. Your first check-in will lock it in.");
 
-  streakDayText && (streakDayText.textContent = `Day ${base + streak}`);
+  const streak = data.current_streak || 0;
+  streakDayText && (streakDayText.textContent = `Day ${streak}`);
 
   if (data.last_checkin_date) {
     lastCheckInText &&
@@ -228,8 +225,8 @@ async function loadState() {
 // ===============================
 checkInBtn?.addEventListener("click", () =>
   guarded("checkIn", async () => {
-    const typed = sanitizeForStorage(identityInput?.value);
-    if (!typed.trim()) {
+    const input = sanitizeForStorage(identityInput?.value);
+    if (!input.trim()) {
       showMessage("Type your Monk Mode script first.", "error");
       return;
     }
@@ -239,7 +236,7 @@ checkInBtn?.addEventListener("click", () =>
 
     const { data, error: readErr } = await supabase
       .from(TABLE)
-      .select("*")
+      .select("identity_statement,current_streak,last_checkin_date,last_checkin_time")
       .eq("user_id", currentUserId)
       .maybeSingle();
 
@@ -249,13 +246,12 @@ checkInBtn?.addEventListener("click", () =>
       return;
     }
 
-    // first time: create row and lock script
+    // First ever check-in: lock script in + start streak
     if (!data) {
       const { error: insErr } = await supabase.from(TABLE).insert({
         user_id: currentUserId,
-        identity_statement: typed,
+        identity_statement: input,
         current_streak: 1,
-        starting_day: 0,
         last_checkin_date: today,
         last_checkin_time: now,
       });
@@ -271,21 +267,18 @@ checkInBtn?.addEventListener("click", () =>
       return;
     }
 
-    // already checked in today
+    // Already checked in today
     if (data.last_checkin_date === today) {
       showMessage(`Already checked in today — ${formatTimeAmPm(data.last_checkin_time)}`, "success");
       return;
     }
 
-    // enforce exact script match
-    const saved = normalize(data.identity_statement || "");
-    const nowTyped = normalize(typed);
-    if (saved && nowTyped !== saved) {
-      showMessage(
-        "Script mismatch. To change your rules, click “Save / Update Script” first (streak stays).",
-        "error",
-        6500
-      );
+    // Enforce exact script match (after it has been locked in)
+    const saved = normalizeForCompare(data.identity_statement || "");
+    const typed = normalizeForCompare(input);
+
+    if (saved && typed !== saved) {
+      showMessage("Script must match your saved Monk Mode script exactly.", "error");
       return;
     }
 
@@ -342,7 +335,6 @@ resetStreakBtn?.addEventListener("click", () =>
       .from(TABLE)
       .update({
         current_streak: 0,
-        starting_day: 0,
         last_checkin_date: null,
         last_checkin_time: null,
       })
@@ -355,31 +347,6 @@ resetStreakBtn?.addEventListener("click", () =>
     }
 
     showMessage("✅ Reset to Day 0.", "success");
-    await loadState();
-  })
-);
-
-// Optional: starting day (only if your HTML has it)
-setStartingDayBtn?.addEventListener("click", () =>
-  guarded("setStartingDay", async () => {
-    const val = clampInt(startingDayInput?.value, 0, MAX_STARTING_DAY);
-    if (val === null) {
-      showMessage("Enter a valid starting day.", "error");
-      return;
-    }
-
-    const { error } = await supabase.from(TABLE).upsert({
-      user_id: currentUserId,
-      starting_day: val,
-    });
-
-    if (error) {
-      console.error(error);
-      showMessage("Could not set starting day.", "error");
-      return;
-    }
-
-    showMessage(`✅ Starting day set to ${val}.`, "success");
     await loadState();
   })
 );
@@ -407,7 +374,7 @@ async function init() {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (subErr) console.error("user_subscriptions select error:", subErr);
+  if (subErr) console.error(subErr);
 
   if (!sub?.is_active) {
     enableDemoMode();
@@ -416,10 +383,13 @@ async function init() {
     return;
   }
 
+  // ✅ subscribed
   CAN_INTERACT = true;
   currentUserId = user.id;
 
+  disableDemoMode(); // ✅ IMPORTANT: hide overlay for real users
   await loadState();
+
   setButtonsDisabled(false);
   showEl(appShell);
 }
