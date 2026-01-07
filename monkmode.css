@@ -14,6 +14,9 @@
 
 *{ box-sizing:border-box; }
 
+/* ✅ Utility (needed so JS can hide demo overlay) */
+.is-hidden{ display:none !important; }
+
 html,body{ height:100%; }
 
 body{
@@ -58,7 +61,6 @@ a:active{ color:var(--ink); }
   text-shadow: 0 0 6px rgba(255,255,255,0.35);
 }
 
-
 .nav-right a:hover{
   color:var(--ink);
   text-shadow:0 0 6px rgba(255,255,255,0.35);
@@ -82,8 +84,6 @@ a:active{ color:var(--ink); }
   background:linear-gradient(90deg, transparent, rgba(255,255,255,0.45), transparent);
   opacity:0.85;
 }
-
-
 
 body::before{
   content:"";
@@ -412,7 +412,6 @@ section{
   color:rgba(255,216,216,0.98);
 }
 
-
 /* STREAK CARD */
 .streak-card{
   border-radius:18px;
@@ -604,7 +603,63 @@ section{
   pointer-events: none !important;
 }
 
+/* ✅ PREVIEW OVERLAY (same behavior as NoFap) */
+.overlay{
+  position: relative;
+  z-index: 20;
+  display: block;
+  width: 100%;
+
+  /* align with .page */
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 24px 20px 0;
+
+  background: transparent;
+  backdrop-filter: none;
+
+  opacity: 1;
+  pointer-events: auto;
+  transition: none;
+}
+
+.guard-card{
+  width: min(520px, 100%);
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: linear-gradient(180deg, rgba(0,0,0,0.88), rgba(0,0,0,0.96));
+  box-shadow: var(--shadow-card);
+  padding: 18px;
+}
+
+.guard-kicker{
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:0.26em;
+  color:var(--muted);
+  margin-bottom:10px;
+}
+
+.guard-title{
+  font-size:18px;
+  margin: 0 0 10px;
+  letter-spacing:0.02em;
+}
+
+.guard-sub{
+  font-size:13px;
+  color:var(--muted);
+  line-height:1.8;
+  margin: 0 0 14px;
+}
+
+.guard-sub--fineprint{
+  margin-top:12px;
+  font-size:11px;
+}
+
+/* Hidden/Visible states for overlay */
+.overlay.is-hidden{ display:none !important; }
+.overlay.is-on{ display:block; }
 
 .message.is-hidden{ display:none; }
-
-
