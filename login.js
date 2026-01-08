@@ -32,8 +32,9 @@ const BASE_PATH = window.location.pathname.replace(/[^/]*$/, ""); // keep traili
 const ORIGIN = window.location.origin;
 
 // Supabase email redirect targets MUST be absolute URLs
-const RESET_REDIRECT_URL = `${ORIGIN}${BASE_PATH}resetpassword.html`;
-const CONFIRM_REDIRECT_URL = `${ORIGIN}${BASE_PATH}LoginPage.html`;
+const RESET_REDIRECT_URL = `${ORIGIN}/resetpassword.html`;
+const CONFIRM_REDIRECT_URL = `${ORIGIN}/LoginPage.html`;
+
 
 // Elements
 const form = document.getElementById("authForm");

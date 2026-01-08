@@ -1,34 +1,20 @@
-// Home/resetpassword.js (hardened + GitHub Pages friendly + CSP-friendly)
-// ✅ External JS only
-// ✅ Handles both ?code= (PKCE) and #access_token/#refresh_token (hash)
-// ✅ Establishes a recovery session before allowing updateUser({ password })
-// ✅ Verifies session before showing form
-// ✅ No innerHTML anywhere
-// ✅ Submit cooldown to prevent double-submit spam
-// ✅ Safe, user-friendly error allowlist
 import { supabase } from "./home.js";
 
 // Keep consistent with your current HTML + signup rule (login.js uses 10)
 const MIN_PASSWORD_LEN = 10;
 
 // --------------------
-// GitHub Pages base-path helpers (used for safeRedirect)
+// Cloudflare Pages-safe redirect helpers (root-based)
 // --------------------
-const isGithubPages = /\.github\.io$/.test(window.location.hostname);
-const repoName = isGithubPages ? window.location.pathname.split("/")[1] : "";
-const BASE_PATH = isGithubPages && repoName ? `/${repoName}` : "";
-const HOME_PATH = `${BASE_PATH}/Home`;
-
-function buildUrlInHome(fileName) {
-  return new URL(`${HOME_PATH}/${fileName}`, window.location.origin).toString();
-}
-
 function safeRedirect(fileName) {
   const allow = new Set(["LoginPage.html", "index.html"]);
   const f = String(fileName || "").trim();
   if (!allow.has(f)) return;
-  window.location.assign(buildUrlInHome(f));
+
+  const url = new URL(`/${f}`, window.location.origin);
+  window.location.assign(url.toString());
 }
+
 
 // Prevent double submits
 let lastSubmitAt = 0;
