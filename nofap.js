@@ -3,6 +3,13 @@ import { supabase } from "./home.js";
 
 console.log("nofap.js loaded");
 
+const DEV = window.location.hostname === "localhost";
+const logError = (...args) => {
+  if (DEV) console.error(...args);
+};
+
+
+
 // ===============================
 // DEMO / PREVIEW MODE
 // ===============================
@@ -164,7 +171,7 @@ async function guarded(_name, fn) {
   try {
     await fn();
   } catch (e) {
-    console.error(e);
+    logError(e);
     showMessage("Operation failed. Please try again.", "error");
   } finally {
     isProcessing = false;
@@ -193,7 +200,7 @@ async function loadState() {
     .maybeSingle();
 
   if (error) {
-    console.error(error);
+    logError(error);
     showMessage("Could not load your data.", "error");
   }
 
@@ -252,7 +259,7 @@ checkInBtn?.addEventListener("click", () =>
       .maybeSingle();
 
     if (readErr) {
-      console.error(readErr);
+      logError(readErr);
       showMessage("Could not read streak status.", "error");
       return;
     }
@@ -267,7 +274,7 @@ checkInBtn?.addEventListener("click", () =>
         last_checkin_time: now,
       });
       if (insErr) {
-        console.error(insErr);
+        logError(insErr);
         showMessage("Check-in failed.", "error");
         return;
       }
@@ -291,7 +298,7 @@ checkInBtn?.addEventListener("click", () =>
       .eq("user_id", currentUserId);
 
     if (upErr) {
-      console.error(upErr);
+      logError(upErr);
       showMessage("Check-in failed.", "error");
       return;
     }
@@ -315,7 +322,7 @@ saveIdentityBtn?.addEventListener("click", () =>
     });
 
     if (error) {
-      console.error(error);
+      logError(error);
       showMessage("Save failed.", "error");
       return;
     }
@@ -341,7 +348,7 @@ resetStreakBtn?.addEventListener("click", () =>
       .eq("user_id", currentUserId);
 
     if (error) {
-      console.error(error);
+      logError(error);
       showMessage("Reset failed.", "error");
       return;
     }
@@ -365,7 +372,7 @@ setStartingDayBtn?.addEventListener("click", () =>
     });
 
     if (error) {
-      console.error(error);
+      logError(error);
       showMessage("Could not set starting day.", "error");
       return;
     }
@@ -399,7 +406,7 @@ async function init() {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (subErr) console.error(subErr);
+  if (subErr) logError(subErr);
 
   if (!sub?.is_active) {
     enableDemoMode();
