@@ -1,17 +1,16 @@
 // paywall.js (production-safe, debug toggle, GitHub Pages + subfolder friendly)
 
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+import { supabase } from "./home.js";
 
-// Supabase
-const SUPABASE_URL = "https://ehwajpgvlzeojdmvloxw.supabase.co";
-const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVod2FqcGd2bHplb2pkbXZsb3h3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc0ODcyMDMsImV4cCI6MjA4MzA2MzIwM30.7jW1k4SFUT8Cj5pB1QJ3vLqd3MEjw1EA2FESuJ9H8Yk";
+
 
 const ALLOWED_PAGES = new Set([
   "LoginPage.html",
   "index.html",
   "Paywall.html",
   "NoCorn+NoFap.html",
+  "MonkMode.html",
+  "NoSocialMedia.html",
   "resetpassword.html",
 ]);
 
@@ -66,9 +65,6 @@ function rememberReturnTo() {
   }
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
-});
 
 (async function init() {
   try {

@@ -63,20 +63,15 @@ function safeNavWithQuery(page, params = {}) {
 
   const url = new URL(`${APP_ROOT}${p}`, window.location.origin);
 
-  // only allow safe keys/values
-  for (const [k, v] of Object.entries(params)) {
-    const key = String(k).trim();
-    const val = String(v ?? "").trim();
-    if (!key || !val) continue;
-
-    // for return_to we only allow internal allowlisted pages
-    if (key === "return_to" && !ALLOWED_PAGES.has(val)) continue;
-
-    url.searchParams.set(key, val);
+  // ✅ allow ONLY return_to
+  const returnTo = String(params.return_to ?? "").trim();
+  if (returnTo && ALLOWED_PAGES.has(returnTo)) {
+    url.searchParams.set("return_to", returnTo);
   }
 
   window.location.replace(url.toString());
 }
+
 
 function updateLogoutVisibility(isAuthed) {
   if (btnLogout) btnLogout.classList.toggle("hidden", !isAuthed);
