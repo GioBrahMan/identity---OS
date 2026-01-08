@@ -15,8 +15,9 @@ const ALLOWED_PAGES = new Set([
   "resetpassword.html",
 ]);
 
-// Debug toggle: show JSON only when URL has ?debug=1
-const DEBUG_ENABLED = new URLSearchParams(window.location.search).get("debug") === "1";
+const DEBUG_ENABLED =
+  window.location.hostname === "localhost" &&
+  new URLSearchParams(window.location.search).get("debug") === "1";
 
 // Works for:
 // - /Paywall.html
